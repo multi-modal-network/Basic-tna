@@ -9,6 +9,8 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.primitives.UnsignedInteger;
 import org.onlab.packet.DeserializationException;
 import org.onlab.packet.Ethernet;
+import org.onlab.packet.IP;
+import org.onlab.packet.IPacket;
 import org.onlab.util.ImmutableByteSequence;
 import org.onosproject.net.ConnectPoint;
 import org.onosproject.net.DeviceId;
@@ -28,7 +30,8 @@ import org.onosproject.net.pi.model.PiTableId;
 import org.onosproject.net.pi.runtime.PiAction;
 import org.onosproject.net.pi.runtime.PiPacketMetadata;
 import org.onosproject.net.pi.runtime.PiPacketOperation;
-
+import org.slf4j.Logger;
+import static org.slf4j.LoggerFactory.getLogger;
 import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.List;
@@ -52,6 +55,7 @@ import static org.stratumproject.basic.tna.behaviour.BasicTreatmentInterpreter.m
  */
 public class BasicInterpreter extends AbstractBasicHandlerBehavior
         implements PiPipelineInterpreter {
+    private static final Logger log = getLogger(BasicInterpreter.class);
     private static final Set<PiTableId> TABLE0_CTRL_TBLS = ImmutableSet.of(
             P4InfoConstants.BASIC_INGRESS_TABLE0_TABLE0);
     private static final Map<Integer, PiTableId> TABLE_MAP =
@@ -205,6 +209,7 @@ public class BasicInterpreter extends AbstractBasicHandlerBehavior
         // Assuming that the packet is ethernet, which is fine since fabric.p4
         // can deparse only ethernet packets.
         Ethernet ethPkt;
+        //log.warn("new Pkt");
         try {
             ethPkt = Ethernet.deserializer().deserialize(packetIn.data().asArray(), 0,
                                                          packetIn.data().size());
@@ -216,6 +221,7 @@ public class BasicInterpreter extends AbstractBasicHandlerBehavior
         Optional<PiPacketMetadata> packetMetadata = packetIn.metadatas()
                 .stream().filter(m -> m.id().equals(P4InfoConstants.INGRESS_PORT))
                 .findFirst();
+        final short pktType;
 
         if (packetMetadata.isPresent()) {
             try {
@@ -229,11 +235,19 @@ public class BasicInterpreter extends AbstractBasicHandlerBehavior
                     receivedFrom = translateSwitchPort(receivedFrom);
                 }
                 ByteBuffer rawData = ByteBuffer.wrap(packetIn.data().asArray());
+                pktType = ethPkt.getEtherType();
+                log.warn("new Pkt is {} type from device {} port {}",pktType,deviceId,portByteSequence);
+                byte[] pktb = ethPkt.getPayload().serialize();
+                log.warn("payLoad Length {} : {}",pktb.length,pktb);
+                parserPkt(pktType,pktb);
+
                 return new DefaultInboundPacket(receivedFrom, ethPkt, rawData);
             } catch (ImmutableByteSequence.ByteSequenceTrimException e) {
                 throw new PiInterpreterException(format(
                         "Malformed metadata '%s' in packet-in received from '%s': %s",
                         P4InfoConstants.INGRESS_PORT, deviceId, packetIn));
+            } catch (DeserializationException e) {
+                throw new RuntimeException(e);
             }
         } else {
             throw new PiInterpreterException(format(
@@ -241,6 +255,20 @@ public class BasicInterpreter extends AbstractBasicHandlerBehavior
                     P4InfoConstants.INGRESS_PORT, deviceId, packetIn));
         }
     }
+
+    public void parserPkt(short pktType,byte[] payload) throws DeserializationException {
+        switch (pktType){
+            case 0x0800:
+                IP pkt;
+
+                pkt = IP.deserializer().deserialize(payload,0,payload.length);
+                break;
+            case 0x0812:
+
+                break;
+        }
+    }
+
 
     @Override
     public Optional<PiAction> getOriginalDefaultAction(PiTableId tableId) {

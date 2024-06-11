@@ -29,7 +29,7 @@ ONOS_URL ?= http://$(ONOS_HOST):8181/onos
 ONOS_CURL := curl --fail -sSL --user onos:rocks --noproxy localhost
 
 PIPECONF_APP_NAME := org.stratumproject.basic-tna
-PIPECONF_OAR_FILE := $(DIR)/target/basic-tna-1.0.0-SNAPSHOT.oar
+PIPECONF_OAR_FILE := $(DIR)/target/basic-tna-1.0.1-SNAPSHOT.oar
 
 # Profiles to build by default (all)
 PROFILES ?= basic
