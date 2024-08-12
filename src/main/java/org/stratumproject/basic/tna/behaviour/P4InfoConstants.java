@@ -19,6 +19,67 @@ public final class P4InfoConstants {
     private P4InfoConstants() {
     }
 
+    // 多模态
+    public static final PiMatchFieldId ID =
+            PiMatchFieldId.of("hdr.id.dstIdentity");
+    public static final PiMatchFieldId ETHERNET_DST =
+            PiMatchFieldId.of("hdr.ethernet.dst_addr");
+    public static final PiMatchFieldId IPV4_DST =
+            PiMatchFieldId.of("hdr.ipv4.dstAddr");
+    public static final PiMatchFieldId DEST_GUID =
+            PiMatchFieldId.of("hdr.mf.dest_guid");
+    public static final PiMatchFieldId LAT =
+            PiMatchFieldId.of("hdr.gbc.geoAreaPosLat");
+    public static final PiMatchFieldId LON =
+            PiMatchFieldId.of("hdr.gbc.geoAreaPosLon");
+    public static final PiMatchFieldId DISA =
+            PiMatchFieldId.of("hdr.gbc.disa");
+    public static final PiMatchFieldId DISB =
+            PiMatchFieldId.of("hdr.gbc.disb");
+    public static final PiMatchFieldId NDN_PREFIX_CODE =
+            PiMatchFieldId.of("hdr.ndn.ndn_prefix.code");
+    public static final PiMatchFieldId NAME_TLV_COMPONENTS =
+            PiMatchFieldId.of("hdr.ndn.name_tlv.components[0].value");
+    public static final PiMatchFieldId CONTENT_TLV =
+            PiMatchFieldId.of("hdr.ndn.content_tlv.value");
+
+
+    public static final PiTableId BASIC_INGRESS_TABLE1_TABLE1 =
+           PiTableId.of("ingress.routing_v4_table");
+    public static final PiActionId BASIC_INGRESS_TABLE1_SET_OUTPUT =
+            PiActionId.of("ingress.set_next_v4_hop");
+    public static final PiActionId BASIC_INGRESS_TABLE1_DROP =
+            PiActionId.of("ingress.drop");
+            
+    public static final PiTableId BASIC_INGRESS_TABLE2_TABLE2 =
+           PiTableId.of("ingress.routing_mf_table");
+    public static final PiActionId BASIC_INGRESS_TABLE2_SET_OUTPUT =
+            PiActionId.of("ingress.set_next_mf_hop");
+    public static final PiActionId BASIC_INGRESS_TABLE2_DROP =
+            PiActionId.of("ingress.drop");
+            
+    public static final PiTableId BASIC_INGRESS_TABLE3_TABLE3 =
+           PiTableId.of("ingress.routing_geo_table");
+    public static final PiActionId BASIC_INGRESS_TABLE3_SET_OUTPUT =
+            PiActionId.of("ingress.geo_ucast_route");
+    public static final PiActionId BASIC_INGRESS_TABLE3_DROP =
+            PiActionId.of("ingress.drop");
+
+    public static final PiTableId BASIC_INGRESS_TABLE4_TABLE4 =
+           PiTableId.of("ingress.routing_ndn_table");
+    public static final PiActionId BASIC_INGRESS_TABLE4_SET_OUTPUT =
+            PiActionId.of("ingress.set_next_ndn_hop");
+    public static final PiActionId BASIC_INGRESS_TABLE4_DROP =
+            PiActionId.of("ingress.drop");
+
+
+    public static final PiTableId BASIC_INGRESS_TABLE5_TABLE5 =
+           PiTableId.of("ingress.routing_id_table");
+    public static final PiActionId BASIC_INGRESS_TABLE5_SET_OUTPUT =
+            PiActionId.of("ingress.set_next_id_hop");
+    public static final PiActionId BASIC_INGRESS_TABLE5_DROP =
+            PiActionId.of("ingress.drop");   
+
     // Header field IDs
     public static final PiMatchFieldId HDR_EG_PORT =
             PiMatchFieldId.of("eg_port");
