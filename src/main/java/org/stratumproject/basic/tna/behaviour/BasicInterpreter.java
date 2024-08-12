@@ -48,6 +48,11 @@ import static org.onosproject.net.PortNumber.TABLE;
 import static org.onosproject.net.flow.instructions.Instruction.Type.OUTPUT;
 import static org.onosproject.net.pi.model.PiPacketOperationType.PACKET_OUT;
 import static org.stratumproject.basic.tna.behaviour.BasicTreatmentInterpreter.mapTable0Treatment;
+import static org.stratumproject.basic.tna.behaviour.BasicTreatmentInterpreter1.mapTable1Treatment;
+import static org.stratumproject.basic.tna.behaviour.BasicTreatmentInterpreter2.mapTable2Treatment;
+import static org.stratumproject.basic.tna.behaviour.BasicTreatmentInterpreter3.mapTable3Treatment;
+import static org.stratumproject.basic.tna.behaviour.BasicTreatmentInterpreter4.mapTable4Treatment;
+import static org.stratumproject.basic.tna.behaviour.BasicTreatmentInterpreter5.mapTable5Treatment;
 
 
 /**
@@ -57,10 +62,20 @@ public class BasicInterpreter extends AbstractBasicHandlerBehavior
         implements PiPipelineInterpreter {
     private static final Logger log = getLogger(BasicInterpreter.class);
     private static final Set<PiTableId> TABLE0_CTRL_TBLS = ImmutableSet.of(
-            P4InfoConstants.BASIC_INGRESS_TABLE0_TABLE0);
+            P4InfoConstants.BASIC_INGRESS_TABLE0_TABLE0,
+            P4InfoConstants.BASIC_INGRESS_TABLE1_TABLE1,
+            P4InfoConstants.BASIC_INGRESS_TABLE2_TABLE2,
+            P4InfoConstants.BASIC_INGRESS_TABLE3_TABLE3,
+            P4InfoConstants.BASIC_INGRESS_TABLE4_TABLE4,
+            P4InfoConstants.BASIC_INGRESS_TABLE5_TABLE5);
     private static final Map<Integer, PiTableId> TABLE_MAP =
             new ImmutableMap.Builder<Integer, PiTableId>()
                     .put(0, P4InfoConstants.BASIC_INGRESS_TABLE0_TABLE0)
+                    .put(1, P4InfoConstants.BASIC_INGRESS_TABLE1_TABLE1)
+                    .put(2, P4InfoConstants.BASIC_INGRESS_TABLE2_TABLE2)
+                    .put(3, P4InfoConstants.BASIC_INGRESS_TABLE3_TABLE3)
+                    .put(4, P4InfoConstants.BASIC_INGRESS_TABLE4_TABLE4)
+                    .put(5, P4InfoConstants.BASIC_INGRESS_TABLE5_TABLE5)
                     .build();
     private static final ImmutableMap<Criterion.Type, PiMatchFieldId> CRITERION_MAP =
             ImmutableMap.<Criterion.Type, PiMatchFieldId>builder()
@@ -124,6 +139,16 @@ public class BasicInterpreter extends AbstractBasicHandlerBehavior
             throws PiInterpreterException {
         if (TABLE0_CTRL_TBLS.contains(piTableId)) {
             return mapTable0Treatment(treatment, piTableId);
+        } else if (piTableId.equals(P4InfoConstants.BASIC_INGRESS_TABLE1_TABLE1)) {
+            return mapTable1Treatment(treatment, piTableId);
+        } else if (piTableId.equals(P4InfoConstants.BASIC_INGRESS_TABLE2_TABLE2)) {
+            return mapTable2Treatment(treatment, piTableId);
+        } else if (piTableId.equals(P4InfoConstants.BASIC_INGRESS_TABLE3_TABLE3)) {
+            return mapTable3Treatment(treatment, piTableId);
+        } else if (piTableId.equals(P4InfoConstants.BASIC_INGRESS_TABLE4_TABLE4)) {
+            return mapTable4Treatment(treatment, piTableId);
+        } else if (piTableId.equals(P4InfoConstants.BASIC_INGRESS_TABLE5_TABLE5)) {
+            return mapTable5Treatment(treatment, piTableId);
         } else {
             throw new PiInterpreterException(format(
                     "Treatment mapping not supported for table '%s'", piTableId));
@@ -209,7 +234,7 @@ public class BasicInterpreter extends AbstractBasicHandlerBehavior
         // Assuming that the packet is ethernet, which is fine since fabric.p4
         // can deparse only ethernet packets.
         Ethernet ethPkt;
-        //log.warn("new Pkt");
+        log.warn("new Pkt");
         try {
             ethPkt = Ethernet.deserializer().deserialize(packetIn.data().asArray(), 0,
                                                          packetIn.data().size());
@@ -221,7 +246,7 @@ public class BasicInterpreter extends AbstractBasicHandlerBehavior
         Optional<PiPacketMetadata> packetMetadata = packetIn.metadatas()
                 .stream().filter(m -> m.id().equals(P4InfoConstants.INGRESS_PORT))
                 .findFirst();
-        final short pktType;
+        final int pktType;
 
         if (packetMetadata.isPresent()) {
             try {
@@ -237,9 +262,20 @@ public class BasicInterpreter extends AbstractBasicHandlerBehavior
                 ByteBuffer rawData = ByteBuffer.wrap(packetIn.data().asArray());
                 pktType = ethPkt.getEtherType();
                 log.warn("new Pkt is {} type from device {} port {}",pktType,deviceId,portByteSequence);
-                byte[] pktb = ethPkt.getPayload().serialize();
-                log.warn("payLoad Length {} : {}",pktb.length,pktb);
-                parserPkt(pktType,pktb);
+                byte[] payload = ethPkt.getPayload().serialize();
+                log.warn("payLoad Length {} : {}",payload.length,payload);
+                log.warn("Packet: {}", ethPkt);
+                // 解析各种模态
+                parserPkt(pktType,payload);
+
+                // 构造PakcetOut数据包发回原始数据
+//                TrafficTreatment treatment = DefaultTrafficTreatment.builder()
+//                        .setOutput(receivedFrom.port()).build();
+//                DefaultOutboundPacket outPakcet = new DefaultOutboundPacket(deviceId,treatment,rawData);
+//                log.warn("Send Packet: {}",outPakcet);
+//                mapOutboundPacket(outPakcet).forEach(op-> packetOut);
+
+
 
                 return new DefaultInboundPacket(receivedFrom, ethPkt, rawData);
             } catch (ImmutableByteSequence.ByteSequenceTrimException e) {
@@ -256,17 +292,76 @@ public class BasicInterpreter extends AbstractBasicHandlerBehavior
         }
     }
 
-    public void parserPkt(short pktType,byte[] payload) throws DeserializationException {
+    public void parserPkt(int pktType,byte[] payload) throws DeserializationException {
         switch (pktType){
-            case 0x0800:
+            case 0x0800:      // IP
                 IP pkt;
-
                 pkt = IP.deserializer().deserialize(payload,0,payload.length);
+                log.warn("ip packet: {}",pkt);
                 break;
-            case 0x0812:
-
+            case 0x0812:      // ID
+                int src_id = 0;
+                int dst_id = 0;
+                for (int i=0;i<4;i++) {
+                    src_id |= ((payload[i]&0xff)<<(8*(3-i)));
+                }
+                for (int i=4;i<8;i++){
+                    dst_id |= ((payload[i]&0xff)<<(8*(7-i)));
+                }
+                log.warn("id packet: {} {}",src_id, dst_id);
+                break;
+            case 0x8947:      // GEO
+                int geoAreaPosLat = 0;
+                int getAreaPosLon = 0;
+                short disa = 0;
+                short disb = 0;
+                for(int i=40;i<44;i++){
+                    geoAreaPosLat |= ((payload[i]&0xff)<<(8*(43-i)));
+                }
+                for (int i=44;i<48;i++){
+                    getAreaPosLon |= ((payload[i]&0xff)<<(8*(47-i)));
+                }
+                for (int i=48;i<50;i++){
+                    disa |= ((payload[i]&0xff)<<(8*(49-i)));
+                }
+                for(int i=50;i<52;i++){
+                    disb |= ((payload[i]&0xff)<<(8*(51-i)));
+                }
+                log.warn("geo packet: {} {} {} {}", geoAreaPosLat, getAreaPosLon,disa, disb);
+                break;
+            case 0x27c0:      // MF
+                int mf_type = 0;
+                int src_guid = 0;
+                int dst_guid = 0;
+                for (int i=0;i<4;i++) {
+                    mf_type |= ((payload[i]&0xff)<<(8*i));
+                }
+                for (int i=4;i<8;i++){
+                    src_guid |= ((payload[i]&0xff)<<(8*(i-4)));
+                }
+                for (int i=8;i<12;i++){
+                    dst_guid |= ((payload[i]&0xff)<<(8*(i-8)));
+                }
+                log.warn("mf packet: {} {} {}", mf_type, src_guid, dst_guid);
+                break;
+            case 0x8624:      // NDN
+                int name_component_src = 0;
+                int name_component_dst = 0;
+                short content = 0;
+                for(int i=8;i<12;i++){
+                    name_component_dst |= ((payload[i]&0xff)<<(8*(11-i)));
+                }
+                for(int i=14;i<18;i++){
+                    name_component_src |= ((payload[i]&0xff)<<(8*(17-i)));
+                }
+                for(int i=34;i<36;i++){
+                    content |= ((payload[i]&0xff)<<(8*(35-i)));
+                }
+                log.warn("ndn packet: {} {} {}", name_component_src, name_component_dst, content);
                 break;
         }
+        String scriptPath = "/home/onos/Desktop/scripts/addFlow.py";
+        String command = "python3" + scriptPath;
     }
 
 
