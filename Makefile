@@ -77,7 +77,7 @@ endif
 _mvn_package: _m2_vol
 	$(info *** Building ONOS app...)
 	@mkdir -p target
-	docker run --rm -v $(DIR):/mvn-src -w /mvn-src --user $(UID) \
+	docker run --dns 8.8.8.8 --rm -v $(DIR):/mvn-src -w /mvn-src --user $(UID) \
 		-e MAVEN_OPTS=-Dmaven.repo.local=/.m2 \
 		-e MAVEN_CONFIG=/.m2 \
 		-v $(MVN_CACHE):/.m2 \
