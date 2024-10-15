@@ -20,7 +20,9 @@ public final class P4InfoConstants {
     }
 
     // 多模态
-    public static final PiMatchFieldId ID =
+    public static final PiMatchFieldId SRC_ID =
+            PiMatchFieldId.of("hdr.id.srcIdentity");
+    public static final PiMatchFieldId DST_ID =
             PiMatchFieldId.of("hdr.id.dstIdentity");
     public static final PiMatchFieldId ETHERNET_DST =
             PiMatchFieldId.of("hdr.ethernet.dst_addr");
