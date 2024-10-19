@@ -123,6 +123,29 @@ SPDX-License-Identifier: Apache-2.0
      <scope>provided</scope>
    </dependency>
 
+    <dependency>
+        <groupId>org.json</groupId>
+        <artifactId>json</artifactId>
+        <version>20210307</version>
+    </dependency>
+   <!-- <dependency>
+        <groupId>org.apache.rocketmq</groupId>
+        <artifactId>rocketmq-client-java</artifactId>
+        <version>5.0.5</version>
+    </dependency> 
+
+    <dependency>
+        <groupId>org.apache.rocketmq</groupId>
+        <artifactId>rocketmq-client-apis</artifactId>
+        <version>5.0.5</version>
+    </dependency> 
+
+    <dependency>
+        <groupId>javax.annotation</groupId>
+        <artifactId>javax.annotation-api</artifactId>
+        <version>1.3.2</version>
+    </dependency> -->
+
    </dependencies>
     <build>
         <plugins>
@@ -142,6 +165,12 @@ SPDX-License-Identifier: Apache-2.0
                         <Bundle-SymbolicName>
                             ${project.groupId}.${project.artifactId}
                         </Bundle-SymbolicName>
+                        <!-- <Export-Package>
+                            org.apache.rocketmq.client.apis.*,org.apache.rocketmq.shaded.com.google.common.base,javax.annonation.*
+                        </Export-Package> -->
+                        <Export-Package>
+                            org.json.*
+                        </Export-Package>
                         <Import-Package>
                             *,org.glassfish.jersey.servlet
                         </Import-Package>

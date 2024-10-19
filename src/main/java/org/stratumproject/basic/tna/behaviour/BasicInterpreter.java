@@ -39,6 +39,17 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.Map;
 
+import java.io.FileOutputStream;
+import java.io.OutputStream;
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.List;
+import org.json.JSONObject;
+import org.json.JSONArray;
+
 import static java.lang.String.format;
 import static java.util.stream.Collectors.toList;
 import static org.onlab.util.ImmutableByteSequence.copyFrom;
@@ -53,7 +64,6 @@ import static org.stratumproject.basic.tna.behaviour.BasicTreatmentInterpreter2.
 import static org.stratumproject.basic.tna.behaviour.BasicTreatmentInterpreter3.mapTable3Treatment;
 import static org.stratumproject.basic.tna.behaviour.BasicTreatmentInterpreter4.mapTable4Treatment;
 import static org.stratumproject.basic.tna.behaviour.BasicTreatmentInterpreter5.mapTable5Treatment;
-
 
 /**
  * Interpreter for fabric-tna pipeline.
@@ -265,8 +275,11 @@ public class BasicInterpreter extends AbstractBasicHandlerBehavior
                 byte[] payload = ethPkt.getPayload().serialize();
                 log.warn("payLoad Length {} : {}",payload.length,payload);
                 log.warn("Packet: {}", ethPkt);
+                // 解析模态、计算路径、下发流表
+                handleModalPacket(pktType, ethPkt.getPayload().serialize());
                 // 解析各种模态
-                parserPkt(pktType,payload);
+                // parserPkt(pktType,payload);
+                // sendToMMQueue(ethPkt);
 
                 // 构造PakcetOut数据包发回原始数据
 //                TrafficTreatment treatment = DefaultTrafficTreatment.builder()
@@ -282,14 +295,306 @@ public class BasicInterpreter extends AbstractBasicHandlerBehavior
                 throw new PiInterpreterException(format(
                         "Malformed metadata '%s' in packet-in received from '%s': %s",
                         P4InfoConstants.INGRESS_PORT, deviceId, packetIn));
-            } catch (DeserializationException e) {
-                throw new RuntimeException(e);
             }
         } else {
             throw new PiInterpreterException(format(
                     "Missing metadata '%s' in packet-in received from '%s': %s",
                     P4InfoConstants.INGRESS_PORT, deviceId, packetIn));
         }
+    }
+
+    // public void sendToMMQueue(Ethernet ethPkt) throws ClientException {
+    //     String endpoint = "localhost:8081";
+    //     String topic = "TestTopic";
+    //     ClientServiceProvider provider = ClientServiceProvider.loadService();
+    //     ClientConfigurationBuilder builder = ClientConfiguration.newBuilder().setEndpoints(endpoint);
+    //     ClientConfiguration configuration = builder.build();
+    //     Producer producer = provider.newProducerBuilder()
+    //         .setTopics(topic)
+    //         .setClientConfiguration(configuration)
+    //         .build();
+    //     // 普通消息发送。
+    //     Message message = provider.newMessageBuilder()
+    //         .setTopic(topic)
+    //         // 设置消息索引键，可根据关键字精确查找某条消息。
+    //         .setKeys(String.format("%d",ethPkt.getEtherType()))
+    //         // 设置消息Tag，用于消费端根据指定Tag过滤消息。
+    //         .setTag("messageTag")
+    //         // 消息体。
+    //         .setBody("test modal packet".getBytes())
+    //         .build();
+    //     try {
+    //         // 发送消息，需要关注发送结果，并捕获失败等异常。
+    //         SendReceipt sendReceipt = producer.send(message);
+    //         log.info("Send message successfully, messageId={}", sendReceipt.getMessageId());
+    //     } catch (ClientException e) {
+    //         log.error("Failed to send message", e);
+    //     }
+    //     // producer.close();
+    // }
+
+    public int vmx = 1;
+
+    private String decimalTo8Hex(int value) {
+        String hexNumber = Integer.toHexString(value).toUpperCase();
+        return String.format("%8s", hexNumber).replace(' ','0');
+    }
+
+    public JSONObject generateIDFlows(int switchID, int port, int srcIdentifier, int dstIdentifier) {
+        /*
+        {
+            "flows": [
+                {
+                    "priority": 10,
+                    "timeout": 0,
+                    "isPermanent": "true",
+                    "tableId": "5",     // id的tableId=5
+                    "deviceId": f"device:domain1:group4:level{math.floor(math.log2(switch))+1}:s{switch+300}",
+                    "treatment": {
+                        "instructions": [
+                            {
+                                "type": "PROTOCOL_INDEPENDENT",
+                                "subtype": "ACTION",
+                                "actionId": "ingress.set_next_id_hop",
+                                "actionParams": {
+                                    "dst_port": f"{port}"
+                                }
+                            }
+                        ]
+                    },
+                    "clearDeferred": "true",
+                    "selector": {
+                        "criteria": [
+                            {
+                                "type": "PROTOCOL_INDEPENDENT",
+                                "matches": [
+                                    {
+                                        "field": "hdr.ethernet.ether_type",
+                                        "match": "exact",
+                                        "value": "0812"
+                                    },
+                                    {
+                                        "field": "hdr.id.srcIdentity",
+                                        "match": "exact",
+                                        "value": decimal_to_8hex(identity_src)
+                                    },
+                                    {
+                                        "field": "hdr.id.dstIdentity",
+                                        "match": "exact",
+                                        "value": decimal_to_8hex(identity_dst)
+                                    },
+                                ]
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+         */
+        int srcIdentity = 202271720 + vmx * 100000 + srcIdentifier - 64;
+        int dstIdentity = 202271720 + vmx * 100000 + dstIdentifier - 64;
+        int level = (int) (Math.log(switchID)/Math.log(2)) + 1;
+        log.warn("generateIDFlows srcIdentifier:{}, dstIdentifier:{}, srcIdentity:{}, dstIdentity:{}", srcIdentifier, dstIdentifier, srcIdentity, dstIdentity);
+        String deviceID = String.format("device:domain1:group4:level%d:s%d",level, switchID + 300);
+        JSONObject flowObject = new JSONObject();
+        flowObject.put("priority", 10);
+        flowObject.put("timeout", 0);
+        flowObject.put("isPermanent", "true");
+        flowObject.put("tableId",5);
+        flowObject.put("deviceId", deviceID);
+        flowObject.put("treatment", new JSONObject()
+                .put("instructions", new JSONArray()
+                        .put(new JSONObject()
+                                .put("type", "PROTOCOL_INDEPENDENT")
+                                .put("subtype", "ACTION")
+                                .put("actionId", "ingress.set_next_id_hop")
+                                .put("actionParams", new JSONObject()
+                                        .put("dst_port", String.format("%s", port))))));
+        flowObject.put("clearDeferred", "true");
+        flowObject.put("selector", new JSONObject()
+                .put("criteria", new JSONArray()
+                        .put(new JSONObject()
+                                .put("type", "PROTOCOL_INDEPENDENT")
+                                .put("matches", new JSONArray()
+                                        .put(new JSONObject()
+                                                .put("field", "hdr.ethernet.ether_type")
+                                                .put("match", "exact")
+                                                .put("value", "0812"))
+                                        .put(new JSONObject()
+                                                .put("field", "hdr.id.srcIdentity")
+                                                .put("match", "exact")
+                                                .put("value", decimalTo8Hex(srcIdentity)))
+                                        .put(new JSONObject()
+                                                .put("field", "hdr.id.dstIdentity")
+                                                .put("match", "exact")
+                                                .put("value", decimalTo8Hex(dstIdentity)))))));
+        return new JSONObject().put("flows", new JSONArray().put(flowObject));
+    }
+
+    public void postFlow(String modalType, int switchID, int port, int srcIdentifier, int dstIdentifier) {
+        String IP = "218.199.84.171";
+        String APP_ID = "org.stratumproject.basic-tna";
+        String urlString = String.format("http://%s:8181/onos/v1/flows?appId=%s",IP,APP_ID);
+        String auth = "onos:rocks";
+        String encodedAuth = Base64.getEncoder().encodeToString(auth.getBytes());
+
+        JSONObject jsonData = null;
+
+        switch (modalType) {
+            case "ip":
+                // jsonData = generateIPFlows(switchID, port, srcIdentifier, dstIdentifier);
+                break;
+            case "mf":
+                // jsonData = generateMFFlows(switchID, port, srcIdentifier, dstIdentifier);
+                break;
+            case "geo":
+                // jsonData = generateGEOFlows(switchID, port, srcIdentifier, dstIdentifier);
+                break;
+            case "ndn":
+                // jsonData = generateNDNFlows(switchID, port, srcIdentifier, dstIdentifier);
+                break;
+            case "id":
+                jsonData = generateIDFlows(switchID, port, srcIdentifier, dstIdentifier);
+                break;
+            default:
+                log.error("Invalid modal type: {}", modalType);
+        }
+
+        // 发送请求
+        try {
+            log.warn("------------data------------\n");
+            URL url = new URL(urlString);
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("POST");
+            connection.setRequestProperty("Content-Type", "application/json");
+            connection.setRequestProperty("Authorization", "Basic " + encodedAuth);
+            connection.setDoOutput(true);
+
+            // 发送JSON数据
+            try (OutputStream os = connection.getOutputStream()) {
+                byte[] input = jsonData.toString().getBytes("utf-8");
+                os.write(input, 0, input.length);
+            }
+
+            int responseCode = connection.getResponseCode();
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+                log.warn("Success: " + connection.getResponseMessage());
+            } else {
+                log.warn("Status Code: " + responseCode);
+                log.warn("Response Body: " + connection.getResponseMessage());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return;
+    }
+
+    public void executeAddFlow(String modalType, int srcHost, int dstHost) {
+        int srcSwitch = srcHost-100;   // h180-eth0 <-> s80-eth2
+        int dstSwitch = dstHost-100;   // h166-eth0 <-> s66-eth2
+        int srcIdentifier = srcHost-100;
+        int dstIdentifier = dstHost-100;
+        ArrayList<Integer> involvedSwitches = new ArrayList<>();
+
+        // 交换机的eth0\eth1\eth2对应转发端口0\1\2
+        // srcSwitch至lca(srcSwitch,dstSwitch)路径中交换机需要下发流表（当前节点向父节点转发）
+        // lca(srcSwitch,dstSwitch)至dstSwitch路径中交换机需要下发流表（当前节点的父节点向当前节点转发）
+
+        postFlow(modalType, dstSwitch, 2, srcIdentifier, dstIdentifier);   // dstSwitch需要向网卡eth2的端口转发
+        involvedSwitches.add(dstSwitch);
+
+        int srcDepth = (int) Math.floor(Math.log(srcSwitch)/Math.log(2)) + 1;
+        int dstDepth = (int) Math.floor(Math.log(dstSwitch)/Math.log(2)) + 1;
+
+        log.warn("srcHost:{}, dstHost:{}, srcSwitch:{}, dstSwitch:{}, srcDepth:{}, dstDepth:{}",srcHost, dstHost, srcSwitch, dstSwitch, srcDepth, dstDepth);
+
+        // srcSwitch深度更大
+        if (srcDepth > dstDepth) {
+            while (srcDepth != dstDepth) {
+                postFlow(modalType, srcSwitch, 1, srcIdentifier, dstIdentifier);  // 只能通过eth1向父节点转发
+                involvedSwitches.add(srcSwitch);
+                srcSwitch = (int) Math.floor(srcSwitch / 2);
+                srcDepth = srcDepth - 1;
+            } 
+        }
+
+        // dstSwitch深度更大
+        if (srcDepth < dstDepth) {
+            while (srcDepth != dstDepth) {
+                int father = (int) Math.floor(dstSwitch / 2);
+                if (father*2 == dstSwitch) {
+                    postFlow(modalType, father, 2, srcIdentifier, dstIdentifier);    // 通过eth2向左儿子转发
+                } else {
+                    postFlow(modalType, father, 3, srcIdentifier, dstIdentifier);   // 通过eth3向右儿子转发
+                }
+                involvedSwitches.add(father);
+                dstSwitch = (int) Math.floor(dstSwitch / 2);
+                dstDepth = dstDepth - 1;
+            }
+        }
+
+        // srcSwitch和dstSwitch在同一层，srcSwitch向父节点转发，dstSwitch的父节点向dstSwitch转发
+        while(true){
+            postFlow(modalType, srcSwitch, 1, srcIdentifier, dstIdentifier);
+            int father = (int) Math.floor(dstSwitch / 2);
+            if (father*2 == dstSwitch) {
+                postFlow(modalType, father, 2, srcIdentifier, dstIdentifier);
+            } else {
+                postFlow(modalType, father, 3, srcIdentifier, dstIdentifier);
+            }
+            involvedSwitches.add(srcSwitch);
+            involvedSwitches.add(father);
+            srcSwitch = (int) Math.floor(srcSwitch / 2);
+            dstSwitch = (int) Math.floor(dstSwitch / 2);
+            if (srcSwitch == dstSwitch) {
+                break;
+            }
+        }
+        log.warn("involvedSwitches:{}", involvedSwitches);
+    }
+
+    private int transferIDToHost(int param) {
+        log.warn("transferIDTOHost param:{}",param);
+        int vmx = (param - 202271720) / 100000;
+        int id = param - 202271720 - vmx * 100000 + 64;
+        return vmx * 100 + id;
+    }
+
+    public void handleModalPacket(int pktType, byte[] payload) {
+        String modalType = "";
+        int srcHost = 0, dstHost = 0;
+        ByteBuffer buffer = ByteBuffer.wrap(payload);
+        switch(pktType){
+            case 0x0800:    // IP
+                modalType = "ip";
+                
+                break;
+            case 0x0812:    // ID
+                modalType = "id";
+                srcHost = transferIDToHost(buffer.getInt(0) & 0xffffffff);
+                dstHost = transferIDToHost(buffer.getInt(4) & 0xffffffff);
+                break;
+            case 0x8947:    // GEO
+                modalType = "geo";
+                break;
+            case 0x27c0:    // MF
+                modalType = "mf";
+                break;
+            case 0x8624:    // NDN
+                modalType = "ndn";
+                break;
+        }
+        log.warn("modalType: {}, srcHost: {}, dstHost: {}", modalType, srcHost, dstHost);
+        String path = "/home/onos/Desktop/ngsdn-tutorial/mininet/flows.out";
+        String content = modalType + " " + srcHost + " " + dstHost;
+        try (FileOutputStream fos = new FileOutputStream(path, true)) {
+            fos.write(System.lineSeparator().getBytes());
+            fos.write(content.getBytes());
+            log.info("message written to file... {}", content);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        executeAddFlow(modalType, srcHost, dstHost);
     }
 
     public void parserPkt(int pktType,byte[] payload) throws DeserializationException {
@@ -333,16 +638,10 @@ public class BasicInterpreter extends AbstractBasicHandlerBehavior
                 int mf_type = 0;
                 int src_guid = 0;
                 int dst_guid = 0;
-                for (int i=0;i<4;i++) {
-                    mf_type |= ((payload[i]&0xff)<<(8*i));
-                }
-                for (int i=4;i<8;i++){
-                    src_guid |= ((payload[i]&0xff)<<(8*(i-4)));
-                }
-                for (int i=8;i<12;i++){
-                    dst_guid |= ((payload[i]&0xff)<<(8*(i-8)));
-                }
-                log.warn("mf packet: {} {} {}", mf_type, src_guid, dst_guid);
+                ByteBuffer buffer = ByteBuffer.wrap(payload);
+                mf_type = buffer.getInt(0) & 0xffffffff;
+                src_guid = buffer.getInt(4) & 0xfffffff;
+                dst_guid = buffer.getInt(8) & 0xfffffff;
                 break;
             case 0x8624:      // NDN
                 int name_component_src = 0;
@@ -360,8 +659,6 @@ public class BasicInterpreter extends AbstractBasicHandlerBehavior
                 log.warn("ndn packet: {} {} {}", name_component_src, name_component_dst, content);
                 break;
         }
-        String scriptPath = "/home/onos/Desktop/scripts/addFlow.py";
-        String command = "python3" + scriptPath;
     }
 
 
