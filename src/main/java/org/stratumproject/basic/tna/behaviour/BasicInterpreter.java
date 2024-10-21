@@ -335,9 +335,65 @@ public class BasicInterpreter extends AbstractBasicHandlerBehavior
 
     public int vmx = 1;
 
-    private String decimalTo8Hex(int value) {
+    private String decimal2Hex(int value, int length) {
         String hexNumber = Integer.toHexString(value).toUpperCase();
-        return String.format("%8s", hexNumber).replace(' ','0');
+        if(length == 8) {
+            return String.format("%8s", hexNumber).replace(' ','0');
+        }
+        return String.format("%4s", hexNumber).replace(' ','0');
+    }
+
+    private String ip2Hex(String ipAddr) {
+        String[] parts = ipAddr.split("\\.");
+        String hexAddr = "";
+        for(int i=0;i<parts.length;i++) {
+            int part = Integer.parseInt(parts[i]);
+            String hexPart = Integer.toHexString(part).toUpperCase();
+            hexAddr = hexAddr + String.format("%2s", hexPart).replace(' ','0');
+        }
+        return hexAddr;
+    }
+
+    public JSONObject generateIPFlows(int switchID, int port, int srcIdentifier, int dstIdentifier) {
+        String srcIP = String.format("172.20.%s.%s", vmx+1, srcIdentifier-64+12);
+        String dstIP = String.format("172.20.%s.%s", vmx+1, dstIdentifier-64+12);
+        int level = (int) (Math.log(switchID)/Math.log(2)) + 1;
+        log.warn("generateIPFlows srcIdentifier:{}, dstIdentifier:{}, srcIP:{}, dstIP:{}",
+                srcIdentifier, dstIdentifier, srcIP, dstIP);
+        String deviceID = String.format("device:domain1:group4:level%d:s%d",level, switchID + 300);
+        JSONObject flowObject = new JSONObject();
+        flowObject.put("priority", 10);
+        flowObject.put("timeout", 0);
+        flowObject.put("isPermanent", "true");
+        flowObject.put("tableId",1);                // ip的tableId=1
+        flowObject.put("deviceId", deviceID);
+        flowObject.put("treatment", new JSONObject()
+                .put("instructions", new JSONArray()
+                        .put(new JSONObject()
+                                .put("type", "PROTOCOL_INDEPENDENT")
+                                .put("subtype", "ACTION")
+                                .put("actionId", "ingress.set_next_v4_hop")
+                                .put("actionParams", new JSONObject()
+                                        .put("dst_port", String.format("%s", port))))));
+        flowObject.put("clearDeferred", "true");
+        flowObject.put("selector", new JSONObject()
+                .put("criteria", new JSONArray()
+                        .put(new JSONObject()
+                                .put("type", "PROTOCOL_INDEPENDENT")
+                                .put("matches", new JSONArray()
+                                        .put(new JSONObject()
+                                                .put("field", "hdr.ethernet.ether_type")
+                                                .put("match", "exact")
+                                                .put("value", "0800"))
+                                        .put(new JSONObject()
+                                                .put("field", "hdr.ipv4.srcAddr")
+                                                .put("match", "exact")
+                                                .put("value", ip2Hex(srcIP)))
+                                        .put(new JSONObject()
+                                                .put("field", "hdr.ipv4.dstAddr")
+                                                .put("match", "exact")
+                                                .put("value", ip2Hex(dstIP)))))));
+        return new JSONObject().put("flows", new JSONArray().put(flowObject));
     }
 
     public JSONObject generateIDFlows(int switchID, int port, int srcIdentifier, int dstIdentifier) {
@@ -394,13 +450,14 @@ public class BasicInterpreter extends AbstractBasicHandlerBehavior
         int srcIdentity = 202271720 + vmx * 100000 + srcIdentifier - 64;
         int dstIdentity = 202271720 + vmx * 100000 + dstIdentifier - 64;
         int level = (int) (Math.log(switchID)/Math.log(2)) + 1;
-        log.warn("generateIDFlows srcIdentifier:{}, dstIdentifier:{}, srcIdentity:{}, dstIdentity:{}", srcIdentifier, dstIdentifier, srcIdentity, dstIdentity);
+        log.warn("generateIDFlows srcIdentifier:{}, dstIdentifier:{}, srcIdentity:{}, dstIdentity:{}",
+                srcIdentifier, dstIdentifier, srcIdentity, dstIdentity);
         String deviceID = String.format("device:domain1:group4:level%d:s%d",level, switchID + 300);
         JSONObject flowObject = new JSONObject();
         flowObject.put("priority", 10);
         flowObject.put("timeout", 0);
         flowObject.put("isPermanent", "true");
-        flowObject.put("tableId",5);
+        flowObject.put("tableId",5);                // id的tableId=5
         flowObject.put("deviceId", deviceID);
         flowObject.put("treatment", new JSONObject()
                 .put("instructions", new JSONArray()
@@ -423,11 +480,104 @@ public class BasicInterpreter extends AbstractBasicHandlerBehavior
                                         .put(new JSONObject()
                                                 .put("field", "hdr.id.srcIdentity")
                                                 .put("match", "exact")
-                                                .put("value", decimalTo8Hex(srcIdentity)))
+                                                .put("value", decimal2Hex(srcIdentity,8)))
                                         .put(new JSONObject()
                                                 .put("field", "hdr.id.dstIdentity")
                                                 .put("match", "exact")
-                                                .put("value", decimalTo8Hex(dstIdentity)))))));
+                                                .put("value", decimal2Hex(dstIdentity,8)))))));
+        return new JSONObject().put("flows", new JSONArray().put(flowObject));
+    }
+
+    public JSONObject generateMFFlows(int switchID, int port, int srcIdentifier, int dstIdentifier) {
+        int srcMFGuid = 1 + vmx * 100 + srcIdentifier - 64;
+        int dstMFGuid = 1 + vmx * 100 + dstIdentifier - 64;
+        int level = (int) (Math.log(switchID)/Math.log(2)) + 1;
+        log.warn("generateMFFlows srcIdentifier:{}, dstIdentifier:{}, srcMFGuid:{}, dstMFGuid:{}",
+                srcIdentifier, dstIdentifier, srcMFGuid, dstMFGuid);
+        String deviceID = String.format("device:domain1:group4:level%d:s%d",level, switchID + 300);
+        JSONObject flowObject = new JSONObject();
+        flowObject.put("priority", 10);
+        flowObject.put("timeout", 0);
+        flowObject.put("isPermanent", "true");
+        flowObject.put("tableId",2);                // mf的tableId=4
+        flowObject.put("deviceId", deviceID);
+        flowObject.put("treatment", new JSONObject()
+                .put("instructions", new JSONArray()
+                        .put(new JSONObject()
+                                .put("type", "PROTOCOL_INDEPENDENT")
+                                .put("subtype", "ACTION")
+                                .put("actionId", "ingress.set_next_mf_hop")
+                                .put("actionParams", new JSONObject()
+                                        .put("dst_port", String.format("%s", port))))));
+        flowObject.put("clearDeferred", "true");
+        flowObject.put("selector", new JSONObject()
+                .put("criteria", new JSONArray()
+                        .put(new JSONObject()
+                                .put("type", "PROTOCOL_INDEPENDENT")
+                                .put("matches", new JSONArray()
+                                        .put(new JSONObject()
+                                                .put("field", "hdr.ethernet.ether_type")
+                                                .put("match", "exact")
+                                                .put("value", "27c0"))
+                                        .put(new JSONObject()
+                                                .put("field", "hdr.mf.src_guid")
+                                                .put("match", "exact")
+                                                .put("value", decimal2Hex(srcMFGuid,8)))
+                                        .put(new JSONObject()
+                                                .put("field", "hdr.mf.dest_guid")
+                                                .put("match", "exact")
+                                                .put("value", decimal2Hex(dstMFGuid,8)))))));
+        return new JSONObject().put("flows", new JSONArray().put(flowObject));
+    }
+
+    public JSONObject generateNDNFlows(int switchID, int port, int srcIdentifier, int dstIdentifier) {
+        int srcNDNName = 202271720 + vmx * 100000 + srcIdentifier - 64;
+        int dstNDNName = 202271720 + vmx * 100000 + dstIdentifier - 64;
+        int ndnContent = 2048 + vmx * 100 + srcIdentifier - 64;
+        int level = (int) (Math.log(switchID)/Math.log(2)) + 1;
+        log.warn("generateNDNFlows srcIdentifier:{}, dstIdentifier:{}, srcNDNName:{}, dstNDNName:{}, ndnContent:{}",
+                srcIdentifier, dstIdentifier, srcNDNName, dstNDNName, ndnContent);
+        String deviceID = String.format("device:domain1:group4:level%d:s%d",level, switchID + 300);
+        JSONObject flowObject = new JSONObject();
+        flowObject.put("priority", 10);
+        flowObject.put("timeout", 0);
+        flowObject.put("isPermanent", "true");
+        flowObject.put("tableId",4);                // ndn的tableId=4
+        flowObject.put("deviceId", deviceID);
+        flowObject.put("treatment", new JSONObject()
+                .put("instructions", new JSONArray()
+                        .put(new JSONObject()
+                                .put("type", "PROTOCOL_INDEPENDENT")
+                                .put("subtype", "ACTION")
+                                .put("actionId", "ingress.set_next_ndn_hop")
+                                .put("actionParams", new JSONObject()
+                                        .put("dst_port", String.format("%s", port))))));
+        flowObject.put("clearDeferred", "true");
+        flowObject.put("selector", new JSONObject()
+                .put("criteria", new JSONArray()
+                        .put(new JSONObject()
+                                .put("type", "PROTOCOL_INDEPENDENT")
+                                .put("matches", new JSONArray()
+                                        .put(new JSONObject()
+                                                .put("field", "hdr.ethernet.ether_type")
+                                                .put("match", "exact")
+                                                .put("value", "8624"))
+                                        .put(new JSONObject()
+                                                .put("field", "hdr.ndn.ndn_prefix.code")
+                                                .put("match", "exact")
+                                                .put("value", "06"))
+                                        .put(new JSONObject()
+                                                .put("field", "hdr.ndn.name_tlv.components[0].value")
+                                                .put("match", "exact")
+                                                .put("value", decimal2Hex(srcNDNName,8)))
+                                        .put(new JSONObject()
+                                                .put("field", "hdr.ndn.name_tlv.components[1].value")
+                                                .put("match", "exact")
+                                                .put("value", decimal2Hex(dstNDNName,8)))
+                                        .put(new JSONObject()
+                                                .put("field", "hdr.ndn.content_tlv.value")
+                                                .put("match", "exact")
+                                                .put("value", decimal2Hex(ndnContent,4)))))));
         return new JSONObject().put("flows", new JSONArray().put(flowObject));
     }
 
@@ -442,19 +592,19 @@ public class BasicInterpreter extends AbstractBasicHandlerBehavior
 
         switch (modalType) {
             case "ip":
-                // jsonData = generateIPFlows(switchID, port, srcIdentifier, dstIdentifier);
+                jsonData = generateIPFlows(switchID, port, srcIdentifier, dstIdentifier);
                 break;
-            case "mf":
-                // jsonData = generateMFFlows(switchID, port, srcIdentifier, dstIdentifier);
+            case "id":
+                jsonData = generateIDFlows(switchID, port, srcIdentifier, dstIdentifier);
                 break;
             case "geo":
                 // jsonData = generateGEOFlows(switchID, port, srcIdentifier, dstIdentifier);
                 break;
-            case "ndn":
-                // jsonData = generateNDNFlows(switchID, port, srcIdentifier, dstIdentifier);
+            case "mf":
+                jsonData = generateMFFlows(switchID, port, srcIdentifier, dstIdentifier);
                 break;
-            case "id":
-                jsonData = generateIDFlows(switchID, port, srcIdentifier, dstIdentifier);
+            case "ndn":
+                jsonData = generateNDNFlows(switchID, port, srcIdentifier, dstIdentifier);
                 break;
             default:
                 log.error("Invalid modal type: {}", modalType);
@@ -506,7 +656,8 @@ public class BasicInterpreter extends AbstractBasicHandlerBehavior
         int srcDepth = (int) Math.floor(Math.log(srcSwitch)/Math.log(2)) + 1;
         int dstDepth = (int) Math.floor(Math.log(dstSwitch)/Math.log(2)) + 1;
 
-        log.warn("srcHost:{}, dstHost:{}, srcSwitch:{}, dstSwitch:{}, srcDepth:{}, dstDepth:{}",srcHost, dstHost, srcSwitch, dstSwitch, srcDepth, dstDepth);
+        log.warn("srcHost:{}, dstHost:{}, srcSwitch:{}, dstSwitch:{}, srcDepth:{}, dstDepth:{}",
+                srcHost, dstHost, srcSwitch, dstSwitch, srcDepth, dstDepth);
 
         // srcSwitch深度更大
         if (srcDepth > dstDepth) {
@@ -552,12 +703,33 @@ public class BasicInterpreter extends AbstractBasicHandlerBehavior
         }
         log.warn("involvedSwitches:{}", involvedSwitches);
     }
+    
+    private int transferIP2Host(int param) {
+        log.warn("transferIP2Host param:{}", param);
+        int x = (param & 0xffff) >> 8;
+        int i = param & 0xff + 64 - 12;
+        return x * 100 + i;
+    }
 
-    private int transferIDToHost(int param) {
-        log.warn("transferIDTOHost param:{}",param);
-        int vmx = (param - 202271720) / 100000;
-        int id = param - 202271720 - vmx * 100000 + 64;
-        return vmx * 100 + id;
+    private int transferID2Host(int param) {
+        log.warn("transferID2Host param:{}",param);
+        int x = (param - 202271720) / 100000;
+        int i = param - 202271720 - x * 100000 + 64;
+        return x * 100 + i;
+    }
+
+    private int transferMF2Host(int param) {
+        log.warn("transferMF2Host param:{}", param);
+        int x = (param - 1) / 100;
+        int i = param - 1 - x * 100 + 64;
+        return x * 100 + i;
+    }
+
+    private int transferNDN2Host(int param) {
+        log.warn("transferNDN2Host param:{}", param);
+        int x = (param - 202271720) / 100000;
+        int i = param - 202271720 - x * 100000 + 64;
+        return x * 100 + i;
     }
 
     public void handleModalPacket(int pktType, byte[] payload) {
@@ -567,21 +739,27 @@ public class BasicInterpreter extends AbstractBasicHandlerBehavior
         switch(pktType){
             case 0x0800:    // IP
                 modalType = "ip";
-                
+                srcHost = transferIP2Host(buffer.getInt(12) & 0xffffffff);
+                dstHost = transferIP2Host(buffer.getInt(16) & 0xffffffff);
                 break;
             case 0x0812:    // ID
                 modalType = "id";
-                srcHost = transferIDToHost(buffer.getInt(0) & 0xffffffff);
-                dstHost = transferIDToHost(buffer.getInt(4) & 0xffffffff);
+                srcHost = transferID2Host(buffer.getInt(0) & 0xffffffff);
+                dstHost = transferID2Host(buffer.getInt(4) & 0xffffffff);
                 break;
             case 0x8947:    // GEO
                 modalType = "geo";
+
                 break;
             case 0x27c0:    // MF
                 modalType = "mf";
+                srcHost = transferMF2Host(buffer.getInt(4) & 0xffffffff);
+                dstHost = transferMF2Host(buffer.getInt(8) & 0xffffffff);
                 break;
             case 0x8624:    // NDN
                 modalType = "ndn";
+                srcHost = transferNDN2Host(buffer.getInt(8) & 0xffffffff);
+                dstHost = transferNDN2Host(buffer.getInt(14) & 0xffffffff);
                 break;
         }
         log.warn("modalType: {}, srcHost: {}, dstHost: {}", modalType, srcHost, dstHost);
