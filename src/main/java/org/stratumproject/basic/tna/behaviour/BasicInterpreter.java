@@ -736,6 +736,7 @@ public class BasicInterpreter extends AbstractBasicHandlerBehavior
         String modalType = "";
         int srcHost = 0, dstHost = 0;
         ByteBuffer buffer = ByteBuffer.wrap(payload);
+        pktType = (pktType + 65536) % 65536;            // pktType是short类型，可能溢出成负数
         switch(pktType){
             case 0x0800:    // IP
                 modalType = "ip";
