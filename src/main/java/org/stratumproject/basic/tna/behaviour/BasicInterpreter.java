@@ -271,10 +271,9 @@ public class BasicInterpreter extends AbstractBasicHandlerBehavior
                 }
                 ByteBuffer rawData = ByteBuffer.wrap(packetIn.data().asArray());
                 pktType = ethPkt.getEtherType();
+                log.warn("Packet: {}", ethPkt);
                 log.warn("new Pkt is {} type from device {} port {}",pktType,deviceId,portByteSequence);
                 byte[] payload = ethPkt.getPayload().serialize();
-                log.warn("payLoad Length {} : {}",payload.length,payload);
-                log.warn("Packet: {}", ethPkt);
                 // 解析模态、计算路径、下发流表
                 handleModalPacket(pktType, ethPkt.getPayload().serialize());
                 // 解析各种模态
@@ -706,8 +705,8 @@ public class BasicInterpreter extends AbstractBasicHandlerBehavior
     
     private int transferIP2Host(int param) {
         log.warn("transferIP2Host param:{}", param);
-        int x = (param & 0xffff) >> 8;
-        int i = param & 0xff + 64 - 12;
+        int x = ((param & 0xffff) >> 8) - 1;
+        int i = (param & 0xff) + 64 - 12;
         return x * 100 + i;
     }
 
@@ -736,12 +735,13 @@ public class BasicInterpreter extends AbstractBasicHandlerBehavior
         String modalType = "";
         int srcHost = 0, dstHost = 0;
         ByteBuffer buffer = ByteBuffer.wrap(payload);
+        log.warn("payload: {}, buffer: {}", payload, buffer);
         pktType = (pktType + 65536) % 65536;            // pktType是short类型，可能溢出成负数
         switch(pktType){
             case 0x0800:    // IP
                 modalType = "ip";
-                srcHost = transferIP2Host(buffer.getInt(12) & 0xffffffff);
-                dstHost = transferIP2Host(buffer.getInt(16) & 0xffffffff);
+                srcHost = transferIP2Host(((buffer.get(14) & 0xff) << 8) + (buffer.get(15) & 0xff));
+                dstHost = transferIP2Host(((buffer.get(18) & 0xff) << 8) + (buffer.get(19) & 0xff));
                 break;
             case 0x0812:    // ID
                 modalType = "id";
