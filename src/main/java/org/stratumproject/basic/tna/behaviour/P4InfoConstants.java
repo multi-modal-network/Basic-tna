@@ -90,7 +90,7 @@ public final class P4InfoConstants {
     public static final PiMatchFieldId HDR_ETH_SRC =
             PiMatchFieldId.of("eth_src");
     public static final PiMatchFieldId HDR_ETH_TYPE =
-            PiMatchFieldId.of("eth_type");
+            PiMatchFieldId.of("hdr.ethernet.ether_type");
     public static final PiMatchFieldId HDR_IG_PORT =
             PiMatchFieldId.of("ig_port");
     public static final PiMatchFieldId HDR_IP_PROTO =
@@ -106,12 +106,12 @@ public final class P4InfoConstants {
     public static final PiTableId BASIC_EGRESS_STATS_FLOWS =
             PiTableId.of("BasicEgress.stats.flows");
     public static final PiTableId BASIC_INGRESS_TABLE0_TABLE0 =
-            PiTableId.of("BasicIngress.table0.table0");
+            PiTableId.of("ingress.table0_control.table0");
     // Indirect Counter IDs
     public static final PiActionId BASIC_INGRESS_TABLE0_COPY_TO_CPU =
-            PiActionId.of("BasicIngress.table0.copy_to_cpu");;
+            PiActionId.of("ingress.table0_control.clone_to_cpu");
     public static final PiActionId BASIC_INGRESS_TABLE0_DROP =
-            PiActionId.of("BasicIngress.table0.drop");
+            PiActionId.of("ingress.table0_control.drop");
     public static final PiActionId BASIC_INGRESS_TABLE0_SET_OUTPUT =
             PiActionId.of("BasicIngress.table0.set_egress_port");
     public static final PiActionId NOP = PiActionId.of("nop");
