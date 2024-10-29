@@ -109,7 +109,7 @@ public final class P4InfoConstants {
             PiTableId.of("ingress.table0_control.table0");
     // Indirect Counter IDs
     public static final PiActionId BASIC_INGRESS_TABLE0_COPY_TO_CPU =
-            PiActionId.of("ingress.table0_control.clone_to_cpu");
+            PiActionId.of("ingress.table0_control.send_to_cpu");
     public static final PiActionId BASIC_INGRESS_TABLE0_DROP =
             PiActionId.of("ingress.table0_control.drop");
     public static final PiActionId BASIC_INGRESS_TABLE0_SET_OUTPUT =

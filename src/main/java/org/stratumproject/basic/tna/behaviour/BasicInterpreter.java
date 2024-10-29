@@ -763,17 +763,19 @@ public class BasicInterpreter extends AbstractBasicHandlerBehavior
                 dstHost = transferNDN2Host(buffer.getInt(14) & 0xffffffff);
                 break;
         }
-        log.warn("modalType: {}, srcHost: {}, dstHost: {}", modalType, srcHost, dstHost);
-        String path = "/home/onos/Desktop/ngsdn-tutorial/mininet/flows.out";
-        String content = modalType + " " + srcHost + " " + dstHost;
-        try (FileOutputStream fos = new FileOutputStream(path, true)) {
-            fos.write(System.lineSeparator().getBytes());
-            fos.write(content.getBytes());
-            log.info("message written to file... {}", content);
-        } catch (IOException e) {
-            e.printStackTrace();
+        if (modalType != "") {
+            log.warn("modalType: {}, srcHost: {}, dstHost: {}", modalType, srcHost, dstHost);
+            String path = "/home/onos/Desktop/ngsdn-tutorial/mininet/flows.out";
+            String content = modalType + " " + srcHost + " " + dstHost;
+            try (FileOutputStream fos = new FileOutputStream(path, true)) {
+                fos.write(System.lineSeparator().getBytes());
+                fos.write(content.getBytes());
+                log.info("message written to file... {}", content);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            executeAddFlow(modalType, srcHost, dstHost);
         }
-        executeAddFlow(modalType, srcHost, dstHost);
     }
 
     public void parserPkt(int pktType,byte[] payload) throws DeserializationException {
