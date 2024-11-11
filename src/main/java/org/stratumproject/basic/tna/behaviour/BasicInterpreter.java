@@ -581,7 +581,7 @@ public class BasicInterpreter extends AbstractBasicHandlerBehavior
     }
 
     public void postFlow(String modalType, int switchID, int port, int srcIdentifier, int dstIdentifier) {
-        String IP = "218.199.84.171";
+        String IP = "218.199.84.170";
         String APP_ID = "org.stratumproject.basic-tna";
         String urlString = String.format("http://%s:8181/onos/v1/flows?appId=%s",IP,APP_ID);
         String auth = "onos:rocks";
@@ -735,8 +735,8 @@ public class BasicInterpreter extends AbstractBasicHandlerBehavior
         String modalType = "";
         int srcHost = 0, dstHost = 0;
         ByteBuffer buffer = ByteBuffer.wrap(payload);
-        log.warn("payload: {}, buffer: {}", payload, buffer);
         pktType = (pktType + 65536) % 65536;            // pktType是short类型，可能溢出成负数
+        log.warn("payload: {}, buffer: {}, pktType: {}", payload, buffer, pktType);
         switch(pktType){
             case 0x0800:    // IP
                 modalType = "ip";
@@ -772,6 +772,7 @@ public class BasicInterpreter extends AbstractBasicHandlerBehavior
                 fos.write(content.getBytes());
                 log.info("message written to file... {}", content);
             } catch (IOException e) {
+                log.info("message written failed!");
                 e.printStackTrace();
             }
             executeAddFlow(modalType, srcHost, dstHost);

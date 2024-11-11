@@ -1,5 +1,12 @@
 {
   "devices": {
+    "device:tna-test": {
+      "basic": {
+        "managementAddress": "grpc://172.23.20.69:9559?device_id=1",
+        "driver": "stratum-tofino",
+        "pipeconf": "org.onosproject.pipelines.int"
+      }
+    },
     "device:domain1:group4:level1:s301": {
       "basic": {
         "managementAddress": "grpc://218.199.84.171:50001?device_id=1",
