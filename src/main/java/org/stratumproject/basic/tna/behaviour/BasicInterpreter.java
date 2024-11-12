@@ -12,22 +12,36 @@ import org.onlab.packet.Ethernet;
 import org.onlab.packet.IP;
 import org.onlab.packet.IPacket;
 import org.onlab.util.ImmutableByteSequence;
+import org.onosproject.core.CoreService;
+import org.onosproject.core.ApplicationId;
 import org.onosproject.net.ConnectPoint;
 import org.onosproject.net.DeviceId;
 import org.onosproject.net.Port;
 import org.onosproject.net.PortNumber;
 import org.onosproject.net.device.DeviceService;
 import org.onosproject.net.driver.DriverHandler;
+import org.onosproject.net.flow.DefaultTrafficSelector;
+import org.onosproject.net.flow.TrafficSelector;
+import org.onosproject.net.flow.DefaultTrafficTreatment;
 import org.onosproject.net.flow.TrafficTreatment;
+import org.onosproject.net.flow.DefaultFlowRule;
+import org.onosproject.net.flow.FlowRule;
+import org.onosproject.net.flow.FlowRuleService;
+import org.onosproject.net.flow.criteria.PiCriterion;
 import org.onosproject.net.flow.criteria.Criterion;
 import org.onosproject.net.flow.instructions.Instructions;
+import org.onosproject.net.flow.instructions.PiInstruction;
 import org.onosproject.net.packet.DefaultInboundPacket;
 import org.onosproject.net.packet.InboundPacket;
 import org.onosproject.net.packet.OutboundPacket;
 import org.onosproject.net.pi.model.PiMatchFieldId;
 import org.onosproject.net.pi.model.PiPipelineInterpreter;
 import org.onosproject.net.pi.model.PiTableId;
+import org.onosproject.net.pi.model.PiActionId;
+import org.onosproject.net.pi.model.PiActionParamId;
 import org.onosproject.net.pi.runtime.PiAction;
+import org.onosproject.net.pi.runtime.PiTableAction;
+import org.onosproject.net.pi.runtime.PiActionParam;
 import org.onosproject.net.pi.runtime.PiPacketMetadata;
 import org.onosproject.net.pi.runtime.PiPacketOperation;
 import org.slf4j.Logger;
@@ -580,62 +594,121 @@ public class BasicInterpreter extends AbstractBasicHandlerBehavior
         return new JSONObject().put("flows", new JSONArray().put(flowObject));
     }
 
+    // public void postFlow(String modalType, int switchID, int port, int srcIdentifier, int dstIdentifier) {
+    //     String IP = "218.199.84.171";
+    //     String APP_ID = "org.stratumproject.basic-tna";
+    //     String urlString = String.format("http://%s:8181/onos/v1/flows?appId=%s",IP,APP_ID);
+    //     String auth = "onos:rocks";
+    //     String encodedAuth = Base64.getEncoder().encodeToString(auth.getBytes());
+
+    //     JSONObject jsonData = null;
+
+    //     switch (modalType) {
+    //         case "ip":
+    //             jsonData = generateIPFlows(switchID, port, srcIdentifier, dstIdentifier);
+    //             break;
+    //         case "id":
+    //             jsonData = generateIDFlows(switchID, port, srcIdentifier, dstIdentifier);
+    //             break;
+    //         case "geo":
+    //             // jsonData = generateGEOFlows(switchID, port, srcIdentifier, dstIdentifier);
+    //             break;
+    //         case "mf":
+    //             jsonData = generateMFFlows(switchID, port, srcIdentifier, dstIdentifier);
+    //             break;
+    //         case "ndn":
+    //             jsonData = generateNDNFlows(switchID, port, srcIdentifier, dstIdentifier);
+    //             break;
+    //         default:
+    //             log.error("Invalid modal type: {}", modalType);
+    //     }
+
+    //     // 发送请求
+    //     try {
+    //         log.warn("------------data------------\n");
+    //         URL url = new URL(urlString);
+    //         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+    //         connection.setRequestMethod("POST");
+    //         connection.setRequestProperty("Content-Type", "application/json");
+    //         connection.setRequestProperty("Authorization", "Basic " + encodedAuth);
+    //         connection.setDoOutput(true);
+
+    //         // 发送JSON数据
+    //         try (OutputStream os = connection.getOutputStream()) {
+    //             byte[] input = jsonData.toString().getBytes("utf-8");
+    //             os.write(input, 0, input.length);
+    //         }
+
+    //         int responseCode = connection.getResponseCode();
+    //         if (responseCode == HttpURLConnection.HTTP_OK) {
+    //             log.warn("Success: " + connection.getResponseMessage());
+    //         } else {
+    //             log.warn("Status Code: " + responseCode);
+    //             log.warn("Response Body: " + connection.getResponseMessage());
+    //         }
+    //     } catch (Exception e) {
+    //         e.printStackTrace();
+    //     }
+    //     return;
+    // }
+
+    public byte[] int2Bytes(int value) {
+        return new byte[]{(byte)((value>>>24)&0xff), (byte)((value>>>16)&0xff), (byte)((value>>>8)&0xff), (byte)(value&0xff)};
+    }
+
     public void postFlow(String modalType, int switchID, int port, int srcIdentifier, int dstIdentifier) {
-        String IP = "218.199.84.170";
-        String APP_ID = "org.stratumproject.basic-tna";
-        String urlString = String.format("http://%s:8181/onos/v1/flows?appId=%s",IP,APP_ID);
-        String auth = "onos:rocks";
-        String encodedAuth = Base64.getEncoder().encodeToString(auth.getBytes());
-
-        JSONObject jsonData = null;
-
+        CoreService coreService = handler().get(CoreService.class);
+        ApplicationId appId = coreService.getAppId("org.stratumproject.basic-tna");
+        FlowRuleService flowRuleService = handler().get(FlowRuleService.class);
+        int level = (int) (Math.log(switchID)/Math.log(2)) + 1;
+        DeviceId deviceId = DeviceId.deviceId(String.format("device:domain1:group4:level%d:s%d",level, switchID + 300));
         switch (modalType) {
             case "ip":
-                jsonData = generateIPFlows(switchID, port, srcIdentifier, dstIdentifier);
                 break;
             case "id":
-                jsonData = generateIDFlows(switchID, port, srcIdentifier, dstIdentifier);
+                PiMatchFieldId etherTypeFieldId = PiMatchFieldId.of("hdr.ethernet.ether_type");
+                int etherType = 0x0812;
+                PiMatchFieldId srcIdentityFieldId = PiMatchFieldId.of("hdr.id.srcIdentity");
+                byte[] srcIdentity = int2Bytes(202271720 + vmx * 100000 + srcIdentifier - 64);
+                PiMatchFieldId dstIdentityFieldId = PiMatchFieldId.of("hdr.id.dstIdentity");
+                byte[] dstIdentity = int2Bytes(202271720 + vmx * 100000 + dstIdentifier - 64);
+                PiCriterion criteria = PiCriterion.builder()
+                    .matchExact(etherTypeFieldId, etherType)
+                    .matchExact(srcIdentityFieldId, srcIdentity)
+                    .matchExact(dstIdentityFieldId, dstIdentity)
+                    .build();
+                TrafficSelector selector = DefaultTrafficSelector.builder()
+                    .add(criteria)
+                    .build();
+                PiTableAction piTableAction = PiAction.builder()
+                    .withId(PiActionId.of("ingress.set_next_id_hop"))
+                    .withParameter(new PiActionParam(PiActionParamId.of("dst_port"), ImmutableByteSequence.copyFrom(port)))
+                    .build();
+                TrafficTreatment treatment = DefaultTrafficTreatment.builder()
+                    .piTableAction(piTableAction)
+                    .build();
+                FlowRule flowRule = DefaultFlowRule.builder()
+                    .forDevice(deviceId)
+                    .forTable(5)
+                    .withPriority(10)
+                    .withHardTimeout(0)
+                    .withSelector(selector)
+                    .withTreatment(treatment)
+                    .makePermanent()
+                    .fromApp(appId)
+                    .build();
+                flowRuleService.applyFlowRules(flowRule);
+                log.warn("Flow rule applied");
                 break;
             case "geo":
-                // jsonData = generateGEOFlows(switchID, port, srcIdentifier, dstIdentifier);
                 break;
             case "mf":
-                jsonData = generateMFFlows(switchID, port, srcIdentifier, dstIdentifier);
                 break;
             case "ndn":
-                jsonData = generateNDNFlows(switchID, port, srcIdentifier, dstIdentifier);
                 break;
             default:
                 log.error("Invalid modal type: {}", modalType);
         }
-
-        // 发送请求
-        try {
-            log.warn("------------data------------\n");
-            URL url = new URL(urlString);
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            connection.setRequestMethod("POST");
-            connection.setRequestProperty("Content-Type", "application/json");
-            connection.setRequestProperty("Authorization", "Basic " + encodedAuth);
-            connection.setDoOutput(true);
-
-            // 发送JSON数据
-            try (OutputStream os = connection.getOutputStream()) {
-                byte[] input = jsonData.toString().getBytes("utf-8");
-                os.write(input, 0, input.length);
-            }
-
-            int responseCode = connection.getResponseCode();
-            if (responseCode == HttpURLConnection.HTTP_OK) {
-                log.warn("Success: " + connection.getResponseMessage());
-            } else {
-                log.warn("Status Code: " + responseCode);
-                log.warn("Response Body: " + connection.getResponseMessage());
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return;
     }
 
     public void executeAddFlow(String modalType, int srcHost, int dstHost) {
@@ -735,8 +808,8 @@ public class BasicInterpreter extends AbstractBasicHandlerBehavior
         String modalType = "";
         int srcHost = 0, dstHost = 0;
         ByteBuffer buffer = ByteBuffer.wrap(payload);
+        log.warn("payload: {}, buffer: {}", payload, buffer);
         pktType = (pktType + 65536) % 65536;            // pktType是short类型，可能溢出成负数
-        log.warn("payload: {}, buffer: {}, pktType: {}", payload, buffer, pktType);
         switch(pktType){
             case 0x0800:    // IP
                 modalType = "ip";
@@ -772,7 +845,6 @@ public class BasicInterpreter extends AbstractBasicHandlerBehavior
                 fos.write(content.getBytes());
                 log.info("message written to file... {}", content);
             } catch (IOException e) {
-                log.info("message written failed!");
                 e.printStackTrace();
             }
             executeAddFlow(modalType, srcHost, dstHost);
