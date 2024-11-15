@@ -656,55 +656,234 @@ public class BasicInterpreter extends AbstractBasicHandlerBehavior
         return new byte[]{(byte)((value>>>24)&0xff), (byte)((value>>>16)&0xff), (byte)((value>>>8)&0xff), (byte)(value&0xff)};
     }
 
-    public void postFlow(String modalType, int switchID, int port, int srcIdentifier, int dstIdentifier) {
+    public byte[] short2Bytes(short value) {
+        return new byte[]{(byte)((value>>>8)&0xff), (byte)(value&0xff)};
+    }
+
+    private int getIdentity(int vmx, int id) {
+        return 202271720 + vmx * 100000 + id - 64;
+    }
+
+    public byte[] ipString2Bytes(String value) {
+        byte[] rnt = new byte[4];
+        String[] parts = value.split("\\.");
+        for(int i=0;i<parts.length;i++) {
+            int part = Integer.parseInt(parts[i]);
+            rnt[i] = (byte) part;
+        }
+        return rnt;
+    }
+
+    private String getIPv4(int vmx, int id) {
+        return String.format("172.20.%d.%d", vmx + 1, id - 64 + 12);
+    }
+
+    private int getMFGuid(int vmx, int id) {
+        return 1 + vmx * 100 + id - 64;
+    }
+
+    private int getNDNName(int vmx, int id) {
+        return 202271720 + vmx * 100000 + id - 64;
+    }
+
+    private short getNDNContent(int vmx, int id){
+        int result = 2048 + vmx * 100 + id - 64;
+        return (short) result;
+    }
+
+    public FlowRule applyIPv4Flow(DeviceId deviceId, ApplicationId appId, int port, int srcId, int dstId) {
+        PiMatchFieldId etherTypeFieldId = PiMatchFieldId.of("hdr.ethernet.ether_type");
+        int etherType = 0x0800;
+        PiMatchFieldId srcAddrFieldId = PiMatchFieldId.of("hdr.ipv4.srcAddr");
+        String srcIdentifier = getIPv4(vmx, srcId);
+        byte[] srcIPv4Address = ipString2Bytes(srcIdentifier);
+        PiMatchFieldId dstAddrFieldId = PiMatchFieldId.of("hdr.ipv4.dstAddr");
+        String dstIdentifier = getIPv4(vmx, dstId);
+        byte[] dstIPv4Address = ipString2Bytes(dstIdentifier);
+        PiCriterion criteria = PiCriterion.builder()
+            .matchExact(etherTypeFieldId, etherType)
+            .matchExact(srcAddrFieldId, srcIPv4Address)
+            .matchExact(dstAddrFieldId, dstIPv4Address)
+            .build();
+        TrafficSelector selector = DefaultTrafficSelector.builder()
+            .add(criteria)
+            .build();
+        PiTableAction piTableAction = PiAction.builder()
+            .withId(PiActionId.of("ingress.set_next_v4_hop"))
+            .withParameter(new PiActionParam(PiActionParamId.of("dst_port"), ImmutableByteSequence.copyFrom(port)))
+            .build();
+        TrafficTreatment treatment = DefaultTrafficTreatment.builder()
+            .piTableAction(piTableAction)
+            .build();
+        FlowRule flowRule = DefaultFlowRule.builder()
+            .forDevice(deviceId)
+            .forTable(1)
+            .withPriority(10)
+            .withHardTimeout(0)
+            .withSelector(selector)
+            .withTreatment(treatment)
+            .makePermanent()
+            .fromApp(appId)
+            .build();
+        return flowRule;
+    }
+
+    public FlowRule applyIDFlow(DeviceId deviceId, ApplicationId appId, int port, int srcId, int dstId){
+        PiMatchFieldId etherTypeFieldId = PiMatchFieldId.of("hdr.ethernet.ether_type");
+        int etherType = 0x0812;
+        PiMatchFieldId srcIdentityFieldId = PiMatchFieldId.of("hdr.id.srcIdentity");
+        int srcIdentifier = getIdentity(vmx, srcId);
+        byte[] srcIdentity = int2Bytes(srcIdentifier);
+        int dstIdentifier = getIdentity(vmx, dstId);
+        PiMatchFieldId dstIdentityFieldId = PiMatchFieldId.of("hdr.id.dstIdentity");
+        byte[] dstIdentity = int2Bytes(dstIdentifier);
+        PiCriterion criteria = PiCriterion.builder()
+            .matchExact(etherTypeFieldId, etherType)
+            .matchExact(srcIdentityFieldId, srcIdentity)
+            .matchExact(dstIdentityFieldId, dstIdentity)
+            .build();
+        TrafficSelector selector = DefaultTrafficSelector.builder()
+            .add(criteria)
+            .build();
+        PiTableAction piTableAction = PiAction.builder()
+            .withId(PiActionId.of("ingress.set_next_id_hop"))
+            .withParameter(new PiActionParam(PiActionParamId.of("dst_port"), ImmutableByteSequence.copyFrom(port)))
+            .build();
+        TrafficTreatment treatment = DefaultTrafficTreatment.builder()
+            .piTableAction(piTableAction)
+            .build();
+        FlowRule flowRule = DefaultFlowRule.builder()
+            .forDevice(deviceId)
+            .forTable(5)
+            .withPriority(10)
+            .withHardTimeout(0)
+            .withSelector(selector)
+            .withTreatment(treatment)
+            .makePermanent()
+            .fromApp(appId)
+            .build();
+        return flowRule;
+    }
+
+    public void applyGeoFlow(DeviceId deviceId, ApplicationId appId, int port, int srcId, int dstId){
+        PiMatchFieldId etherTypeFieldId = PiMatchFieldId.of("hdr.ethernet.ether_type");
+        int etherType = 0x8947;
+        return;
+    }
+
+    public FlowRule applyMFFlow(DeviceId deviceId, ApplicationId appId, int port, int srcId, int dstId){
+        PiMatchFieldId etherTypeFieldId = PiMatchFieldId.of("hdr.ethernet.ether_type");
+        int etherType = 0x27c0;
+        PiMatchFieldId srcGuidFieldId = PiMatchFieldId.of("hdr.mf.src_guid");
+        int srcIdentifier = getMFGuid(vmx, srcId);
+        byte[] srcMFGuid = int2Bytes(srcIdentifier);
+        PiMatchFieldId dstGuidFieldId = PiMatchFieldId.of("hdr.mf.dest_guid");
+        int dstIdentifier = getMFGuid(vmx, dstId);
+        byte[] dstMFGuid = int2Bytes(dstIdentifier);
+        PiCriterion criteria = PiCriterion.builder()
+            .matchExact(etherTypeFieldId, etherType)
+            .matchExact(srcGuidFieldId, srcMFGuid)
+            .matchExact(dstGuidFieldId, dstMFGuid)
+            .build();
+        TrafficSelector selector = DefaultTrafficSelector.builder()
+            .add(criteria)
+            .build();
+        PiTableAction piTableAction = PiAction.builder()
+            .withId(PiActionId.of("ingress.set_next_mf_hop"))
+            .withParameter(new PiActionParam(PiActionParamId.of("dst_port"), ImmutableByteSequence.copyFrom(port)))
+            .build();                
+        TrafficTreatment treatment = DefaultTrafficTreatment.builder()
+            .piTableAction(piTableAction)
+            .build();
+        FlowRule flowRule = DefaultFlowRule.builder()
+            .forDevice(deviceId)
+            .forTable(2)
+            .withPriority(10)
+            .withHardTimeout(0)
+            .withSelector(selector)
+            .withTreatment(treatment)
+            .makePermanent()
+            .fromApp(appId)
+            .build();
+        return flowRule;
+    }
+
+    public FlowRule applyNDNFlow(DeviceId deviceId, ApplicationId appId, int port, int srcId, int dstId) {
+        PiMatchFieldId etherTypeFieldId = PiMatchFieldId.of("hdr.ethernet.ether_type");
+        int etherType = 0x8624;
+        PiMatchFieldId ndnCodeFieldId = PiMatchFieldId.of("hdr.ndn.ndn_prefix.code");
+        int ndnCode = 6;
+        PiMatchFieldId srcNDNNameFieldId = PiMatchFieldId.of("hdr.ndn.name_tlv.components[0].value");
+        int srcIdentifier = getNDNName(vmx, srcId);
+        byte[] srcNDNName = int2Bytes(srcIdentifier);
+        PiMatchFieldId dstNDNNameFieldId = PiMatchFieldId.of("hdr.ndn.name_tlv.components[1].value");
+        int dstIdentifier = getNDNName(vmx, dstId);
+        byte[] dstNDNName = int2Bytes(dstIdentifier);
+        PiMatchFieldId ndnContentFieldId = PiMatchFieldId.of("hdr.ndn.content_tlv.value");
+        short contentIdentifier = getNDNContent(vmx, srcId);
+        byte[] ndnContent = short2Bytes(contentIdentifier);
+        PiCriterion criteria = PiCriterion.builder()
+            .matchExact(etherTypeFieldId, etherType)
+            .matchExact(ndnCodeFieldId, ndnCode)
+            .matchExact(srcNDNNameFieldId, srcNDNName)
+            .matchExact(dstNDNNameFieldId, dstNDNName)
+            .matchExact(ndnContentFieldId, ndnContent)
+            .build();
+        TrafficSelector selector = DefaultTrafficSelector.builder()
+            .add(criteria)
+            .build();
+        PiTableAction piTableAction = PiAction.builder()
+            .withId(PiActionId.of("ingress.set_next_ndn_hop"))
+            .withParameter(new PiActionParam(PiActionParamId.of("dst_port"), ImmutableByteSequence.copyFrom(port)))
+            .build();                
+        TrafficTreatment treatment = DefaultTrafficTreatment.builder()
+            .piTableAction(piTableAction)
+            .build();
+        FlowRule flowRule = DefaultFlowRule.builder()
+            .forDevice(deviceId)
+            .forTable(4)
+            .withPriority(10)
+            .withHardTimeout(0)
+            .withSelector(selector)
+            .withTreatment(treatment)
+            .makePermanent()
+            .fromApp(appId)
+            .build();
+        return flowRule;
+    }
+
+    public void postFlow(String modalType, int switchID, int port, int srcHost, int dstHost) {
         CoreService coreService = handler().get(CoreService.class);
         ApplicationId appId = coreService.getAppId("org.stratumproject.basic-tna");
         FlowRuleService flowRuleService = handler().get(FlowRuleService.class);
         int level = (int) (Math.log(switchID)/Math.log(2)) + 1;
+        int srcId = srcHost - vmx * 100;
+        int dstId = dstHost - vmx * 100; 
         DeviceId deviceId = DeviceId.deviceId(String.format("device:domain1:group4:level%d:s%d",level, switchID + 300));
+        FlowRule flowRule;
         switch (modalType) {
             case "ip":
+                flowRule = applyIPv4Flow(deviceId, appId, port, srcId, dstId);
+                flowRuleService.applyFlowRules(flowRule);
+                log.warn("IPv4 flow rule applied! {}", flowRule);
                 break;
             case "id":
-                PiMatchFieldId etherTypeFieldId = PiMatchFieldId.of("hdr.ethernet.ether_type");
-                int etherType = 0x0812;
-                PiMatchFieldId srcIdentityFieldId = PiMatchFieldId.of("hdr.id.srcIdentity");
-                byte[] srcIdentity = int2Bytes(202271720 + vmx * 100000 + srcIdentifier - 64);
-                PiMatchFieldId dstIdentityFieldId = PiMatchFieldId.of("hdr.id.dstIdentity");
-                byte[] dstIdentity = int2Bytes(202271720 + vmx * 100000 + dstIdentifier - 64);
-                PiCriterion criteria = PiCriterion.builder()
-                    .matchExact(etherTypeFieldId, etherType)
-                    .matchExact(srcIdentityFieldId, srcIdentity)
-                    .matchExact(dstIdentityFieldId, dstIdentity)
-                    .build();
-                TrafficSelector selector = DefaultTrafficSelector.builder()
-                    .add(criteria)
-                    .build();
-                PiTableAction piTableAction = PiAction.builder()
-                    .withId(PiActionId.of("ingress.set_next_id_hop"))
-                    .withParameter(new PiActionParam(PiActionParamId.of("dst_port"), ImmutableByteSequence.copyFrom(port)))
-                    .build();
-                TrafficTreatment treatment = DefaultTrafficTreatment.builder()
-                    .piTableAction(piTableAction)
-                    .build();
-                FlowRule flowRule = DefaultFlowRule.builder()
-                    .forDevice(deviceId)
-                    .forTable(5)
-                    .withPriority(10)
-                    .withHardTimeout(0)
-                    .withSelector(selector)
-                    .withTreatment(treatment)
-                    .makePermanent()
-                    .fromApp(appId)
-                    .build();
+                flowRule = applyIDFlow(deviceId, appId, port, srcId, dstId);
                 flowRuleService.applyFlowRules(flowRule);
-                log.warn("Flow rule applied");
+                log.warn("ID flow rule applied! {}", flowRule);
                 break;
             case "geo":
+                
                 break;
             case "mf":
+                flowRule = applyMFFlow(deviceId, appId, port, srcId, dstId);
+                flowRuleService.applyFlowRules(flowRule);
+                log.warn("MF flow rule applied! {}", flowRule);
                 break;
             case "ndn":
+                flowRule = applyNDNFlow(deviceId, appId, port, srcId, dstId);
+                flowRuleService.applyFlowRules(flowRule);
+                log.warn("NDN flow rule applied! {}", flowRule);
                 break;
             default:
                 log.error("Invalid modal type: {}", modalType);
@@ -714,15 +893,13 @@ public class BasicInterpreter extends AbstractBasicHandlerBehavior
     public void executeAddFlow(String modalType, int srcHost, int dstHost) {
         int srcSwitch = srcHost-100;   // h180-eth0 <-> s80-eth2
         int dstSwitch = dstHost-100;   // h166-eth0 <-> s66-eth2
-        int srcIdentifier = srcHost-100;
-        int dstIdentifier = dstHost-100;
         ArrayList<Integer> involvedSwitches = new ArrayList<>();
 
         // 交换机的eth0\eth1\eth2对应转发端口0\1\2
         // srcSwitch至lca(srcSwitch,dstSwitch)路径中交换机需要下发流表（当前节点向父节点转发）
         // lca(srcSwitch,dstSwitch)至dstSwitch路径中交换机需要下发流表（当前节点的父节点向当前节点转发）
 
-        postFlow(modalType, dstSwitch, 2, srcIdentifier, dstIdentifier);   // dstSwitch需要向网卡eth2的端口转发
+        postFlow(modalType, dstSwitch, 2, srcHost, dstHost);   // dstSwitch需要向网卡eth2的端口转发
         involvedSwitches.add(dstSwitch);
 
         int srcDepth = (int) Math.floor(Math.log(srcSwitch)/Math.log(2)) + 1;
@@ -734,7 +911,7 @@ public class BasicInterpreter extends AbstractBasicHandlerBehavior
         // srcSwitch深度更大
         if (srcDepth > dstDepth) {
             while (srcDepth != dstDepth) {
-                postFlow(modalType, srcSwitch, 1, srcIdentifier, dstIdentifier);  // 只能通过eth1向父节点转发
+                postFlow(modalType, srcSwitch, 1, srcHost, dstHost);  // 只能通过eth1向父节点转发
                 involvedSwitches.add(srcSwitch);
                 srcSwitch = (int) Math.floor(srcSwitch / 2);
                 srcDepth = srcDepth - 1;
@@ -746,9 +923,9 @@ public class BasicInterpreter extends AbstractBasicHandlerBehavior
             while (srcDepth != dstDepth) {
                 int father = (int) Math.floor(dstSwitch / 2);
                 if (father*2 == dstSwitch) {
-                    postFlow(modalType, father, 2, srcIdentifier, dstIdentifier);    // 通过eth2向左儿子转发
+                    postFlow(modalType, father, 2, srcHost, dstHost);    // 通过eth2向左儿子转发
                 } else {
-                    postFlow(modalType, father, 3, srcIdentifier, dstIdentifier);   // 通过eth3向右儿子转发
+                    postFlow(modalType, father, 3, srcHost, dstHost);   // 通过eth3向右儿子转发
                 }
                 involvedSwitches.add(father);
                 dstSwitch = (int) Math.floor(dstSwitch / 2);
@@ -758,12 +935,12 @@ public class BasicInterpreter extends AbstractBasicHandlerBehavior
 
         // srcSwitch和dstSwitch在同一层，srcSwitch向父节点转发，dstSwitch的父节点向dstSwitch转发
         while(true){
-            postFlow(modalType, srcSwitch, 1, srcIdentifier, dstIdentifier);
+            postFlow(modalType, srcSwitch, 1, srcHost, dstHost);
             int father = (int) Math.floor(dstSwitch / 2);
             if (father*2 == dstSwitch) {
-                postFlow(modalType, father, 2, srcIdentifier, dstIdentifier);
+                postFlow(modalType, father, 2, srcHost, dstHost);
             } else {
-                postFlow(modalType, father, 3, srcIdentifier, dstIdentifier);
+                postFlow(modalType, father, 3, srcHost, dstHost);
             }
             involvedSwitches.add(srcSwitch);
             involvedSwitches.add(father);
