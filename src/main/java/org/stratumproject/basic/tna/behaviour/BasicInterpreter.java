@@ -981,6 +981,10 @@ public class BasicInterpreter extends AbstractBasicHandlerBehavior
         return x * 100 + i;
     }
 
+    private int transferFlexIP2Host(ByteBuffer buffer) {
+        
+    }
+
     public void handleModalPacket(int pktType, byte[] payload) {
         String modalType = "";
         int srcHost = 0, dstHost = 0;
@@ -1012,8 +1016,13 @@ public class BasicInterpreter extends AbstractBasicHandlerBehavior
                 srcHost = transferNDN2Host(buffer.getInt(8) & 0xffffffff);
                 dstHost = transferNDN2Host(buffer.getInt(14) & 0xffffffff);
                 break;
+            case 0x3690:    // FLEXIP
+                modalType = "flexip";
+                srcHost = transferFlexIP2Host(buffer);
+                dstHost = transferFlexIP2Host(buffer);
+                break;
         }
-        if (modalType != "") {
+        if (modalType == "ip" || modalType == "id" || modalType == "geo" || modalType == "mf" || modalType == "ndn" || modalType == "flexip") {
             log.warn("modalType: {}, srcHost: {}, dstHost: {}", modalType, srcHost, dstHost);
             String path = "/home/onos/Desktop/ngsdn-tutorial/mininet/flows.out";
             String content = modalType + " " + srcHost + " " + dstHost;
