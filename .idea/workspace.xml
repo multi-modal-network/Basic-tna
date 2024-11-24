@@ -5,14 +5,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="f088399d-ad91-4f7a-9fa1-4d7d343c44c1" name="更改" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/encodings.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/jarRepositories.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/org/stratumproject/basic/tna/behaviour/BasicInterpreter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/stratumproject/basic/tna/behaviour/BasicInterpreter.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratumproject/basic/tna/behaviour/P4InfoConstants.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/stratumproject/basic/tna/behaviour/P4InfoConstants.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/p4c-out/basic/bmv2/bmv2.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/p4c-out/basic/bmv2/bmv2.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/target/basic-tna-1.0.1-SNAPSHOT-tests.jar" beforeDir="false" afterPath="$PROJECT_DIR$/target/basic-tna-1.0.1-SNAPSHOT-tests.jar" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/target/basic-tna-1.0.1-SNAPSHOT.jar" beforeDir="false" afterPath="$PROJECT_DIR$/target/basic-tna-1.0.1-SNAPSHOT.jar" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/target/basic-tna-1.0.1-SNAPSHOT.oar" beforeDir="false" afterPath="$PROJECT_DIR$/target/basic-tna-1.0.1-SNAPSHOT.oar" afterDir="false" />
@@ -28,6 +23,7 @@
       <change beforePath="$PROJECT_DIR$/target/classes/org/stratumproject/basic/tna/behaviour/BasicTreatmentInterpreter3.class" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/target/classes/org/stratumproject/basic/tna/behaviour/BasicTreatmentInterpreter4.class" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/target/classes/org/stratumproject/basic/tna/behaviour/BasicTreatmentInterpreter5.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/org/stratumproject/basic/tna/behaviour/BasicTreatmentInterpreter6.class" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/target/classes/org/stratumproject/basic/tna/behaviour/BasicUtils.class" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/target/classes/org/stratumproject/basic/tna/behaviour/P4InfoConstants.class" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/target/classes/org/stratumproject/basic/tna/behaviour/pipeliner/AbstractObjectiveTranslator.class" beforeDir="false" />
@@ -40,9 +36,6 @@
       <change beforePath="$PROJECT_DIR$/target/classes/org/stratumproject/basic/tna/behaviour/pipeliner/ObjectiveTranslation$Builder.class" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/target/classes/org/stratumproject/basic/tna/behaviour/pipeliner/ObjectiveTranslation.class" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/target/classes/p4c-out/basic/bmv2/bmv2.json" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/p4c-out/basic/bmv2/bmv2.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/p4c-out/basic/bmv2/p4info.txt" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/p4c-out/basic/bmv2/p4info.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/maven-status/maven-compiler-plugin/compile/default-compile/createdFiles.lst" beforeDir="false" afterPath="$PROJECT_DIR$/target/maven-status/maven-compiler-plugin/compile/default-compile/createdFiles.lst" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/maven-status/maven-compiler-plugin/compile/default-compile/inputFiles.lst" beforeDir="false" afterPath="$PROJECT_DIR$/target/maven-status/maven-compiler-plugin/compile/default-compile/inputFiles.lst" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/target/oar/m2/org/stratumproject/basic-tna/1.0.1-SNAPSHOT/basic-tna-1.0.1-SNAPSHOT.jar" beforeDir="false" afterPath="$PROJECT_DIR$/target/oar/m2/org/stratumproject/basic-tna/1.0.1-SNAPSHOT/basic-tna-1.0.1-SNAPSHOT.jar" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -152,7 +145,7 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1732377093859</updated>
-      <workItem from="1732377095868" duration="8911000" />
+      <workItem from="1732377095868" duration="11562000" />
     </task>
     <servers />
   </component>
@@ -164,8 +157,13 @@
       <breakpoints>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/org/stratumproject/basic/tna/behaviour/BasicInterpreter.java</url>
-          <line>1088</line>
+          <line>1090</line>
           <option name="timeStamp" value="9" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/org/stratumproject/basic/tna/behaviour/BasicInterpreter.java</url>
+          <line>296</line>
+          <option name="timeStamp" value="10" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>

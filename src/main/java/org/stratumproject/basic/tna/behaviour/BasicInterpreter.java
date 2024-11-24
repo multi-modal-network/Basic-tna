@@ -1196,7 +1196,7 @@ public class BasicInterpreter extends AbstractBasicHandlerBehavior
                     if (dstIndex == 240) {  // F0
                         byte[] FlexIP = new byte[2];
                         buffer.get(FlexIP, 0, 2);
-                        int flexip = ((FlexIP[0] * 0xff) << 8) + 
+                        int flexip = ((FlexIP[0] & 0xff) << 8) +
                                      (FlexIP[1] & 0xff);
                         int x = (flexip - 2048) / 100;
                         int i = flexip - 2048 - x * 100 + 64;
