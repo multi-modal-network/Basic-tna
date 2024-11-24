@@ -1,4 +1,5 @@
 /mvn-src/src/main/java/org/stratumproject/basic/tna/behaviour/BasicInterpreter.java
+/mvn-src/src/main/java/org/stratumproject/basic/tna/behaviour/BasicTreatmentInterpreter6.java
 /mvn-src/src/main/java/org/stratumproject/basic/tna/behaviour/pipeliner/AbstractObjectiveTranslator.java
 /mvn-src/src/main/java/org/stratumproject/basic/tna/behaviour/BasicTreatmentInterpreter.java
 /mvn-src/src/main/java/org/stratumproject/basic/tna/behaviour/pipeliner/ForwardingObjectiveTranslator.java

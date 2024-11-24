@@ -4,7 +4,47 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="f088399d-ad91-4f7a-9fa1-4d7d343c44c1" name="更改" comment="" />
+    <list default="true" id="f088399d-ad91-4f7a-9fa1-4d7d343c44c1" name="更改" comment="">
+      <change afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/encodings.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/jarRepositories.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratumproject/basic/tna/behaviour/BasicInterpreter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/stratumproject/basic/tna/behaviour/BasicInterpreter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratumproject/basic/tna/behaviour/P4InfoConstants.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/stratumproject/basic/tna/behaviour/P4InfoConstants.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/basic-tna-1.0.1-SNAPSHOT-tests.jar" beforeDir="false" afterPath="$PROJECT_DIR$/target/basic-tna-1.0.1-SNAPSHOT-tests.jar" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/basic-tna-1.0.1-SNAPSHOT.jar" beforeDir="false" afterPath="$PROJECT_DIR$/target/basic-tna-1.0.1-SNAPSHOT.jar" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/basic-tna-1.0.1-SNAPSHOT.oar" beforeDir="false" afterPath="$PROJECT_DIR$/target/basic-tna-1.0.1-SNAPSHOT.oar" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/META-INF/MANIFEST.MF" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/org/stratumproject/basic/tna/Constants.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/org/stratumproject/basic/tna/PipeconfLoader.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/org/stratumproject/basic/tna/behaviour/AbstractBasicHandlerBehavior.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/org/stratumproject/basic/tna/behaviour/BasicCapabilities.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/org/stratumproject/basic/tna/behaviour/BasicInterpreter.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/org/stratumproject/basic/tna/behaviour/BasicTreatmentInterpreter.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/org/stratumproject/basic/tna/behaviour/BasicTreatmentInterpreter1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/org/stratumproject/basic/tna/behaviour/BasicTreatmentInterpreter2.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/org/stratumproject/basic/tna/behaviour/BasicTreatmentInterpreter3.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/org/stratumproject/basic/tna/behaviour/BasicTreatmentInterpreter4.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/org/stratumproject/basic/tna/behaviour/BasicTreatmentInterpreter5.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/org/stratumproject/basic/tna/behaviour/BasicUtils.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/org/stratumproject/basic/tna/behaviour/P4InfoConstants.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/org/stratumproject/basic/tna/behaviour/pipeliner/AbstractObjectiveTranslator.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/org/stratumproject/basic/tna/behaviour/pipeliner/BasicPipeliner$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/org/stratumproject/basic/tna/behaviour/pipeliner/BasicPipeliner.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/org/stratumproject/basic/tna/behaviour/pipeliner/BasicPipelinerException.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/org/stratumproject/basic/tna/behaviour/pipeliner/Commons.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/org/stratumproject/basic/tna/behaviour/pipeliner/ForwardingObjectiveTranslator$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/org/stratumproject/basic/tna/behaviour/pipeliner/ForwardingObjectiveTranslator.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/org/stratumproject/basic/tna/behaviour/pipeliner/ObjectiveTranslation$Builder.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/org/stratumproject/basic/tna/behaviour/pipeliner/ObjectiveTranslation.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/p4c-out/basic/bmv2/bmv2.json" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/p4c-out/basic/bmv2/bmv2.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/p4c-out/basic/bmv2/p4info.txt" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/p4c-out/basic/bmv2/p4info.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/maven-status/maven-compiler-plugin/compile/default-compile/createdFiles.lst" beforeDir="false" afterPath="$PROJECT_DIR$/target/maven-status/maven-compiler-plugin/compile/default-compile/createdFiles.lst" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/maven-status/maven-compiler-plugin/compile/default-compile/inputFiles.lst" beforeDir="false" afterPath="$PROJECT_DIR$/target/maven-status/maven-compiler-plugin/compile/default-compile/inputFiles.lst" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/oar/m2/org/stratumproject/basic-tna/1.0.1-SNAPSHOT/basic-tna-1.0.1-SNAPSHOT.jar" beforeDir="false" afterPath="$PROJECT_DIR$/target/oar/m2/org/stratumproject/basic-tna/1.0.1-SNAPSHOT/basic-tna-1.0.1-SNAPSHOT.jar" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -13,9 +53,29 @@
   <component name="CodeInsightWorkspaceSettings">
     <option name="optimizeImportsOnTheFly" value="true" />
   </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="ProjectColorInfo"><![CDATA[{
+  "associatedIndex": 6
+}]]></component>
+  <component name="ProjectId" id="2pG0QuOzDX30urpDovgyfG5sTpt" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
-    "node.js.selected.package.tslint": "(autodetect)"
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "git-widget-placeholder": "dev",
+    "kotlin-language-version-configured": "true",
+    "node.js.detected.package.eslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "vue.rearranger.settings.migration": "true",
+    "远程 JVM 调试.basic-tna.executor": "Debug"
   }
 }]]></component>
   <component name="RdControllerToolWindowsLayoutState" isNewUi="true">
@@ -25,9 +85,9 @@
       <window_info id="Commit_Guest" show_stripe_button="false" />
       <window_info id="Pull Requests" show_stripe_button="false" />
       <window_info id="Learn" show_stripe_button="false" />
-      <window_info active="true" content_ui="combo" x="35" y="61" width="557" height="914" id="Project" order="0" visible="true" weight="0.19192708" />
+      <window_info active="true" content_ui="combo" x="35" y="61" width="557" height="914" id="Project" order="0" visible="true" weight="0.19183525" />
       <window_info id="Commit" order="1" weight="0.25" />
-      <window_info id="Structure" order="2" side_tool="true" weight="0.25" />
+      <window_info id="Structure" order="2" side_tool="true" weight="0.19183525" />
       <window_info anchor="bottom" id="Database Changes" show_stripe_button="false" />
       <window_info anchor="bottom" id="TypeScript" show_stripe_button="false" />
       <window_info anchor="bottom" id="Profiler" show_stripe_button="false" />
@@ -37,9 +97,9 @@
       <window_info anchor="bottom" id="Version Control" order="0" />
       <window_info anchor="bottom" id="Problems" order="1" />
       <window_info anchor="bottom" id="Problems View" order="2" />
-      <window_info anchor="bottom" id="Terminal" order="3" weight="0.32977644" />
-      <window_info active="true" anchor="bottom" id="Debug" order="4" visible="true" weight="0.314438" />
-      <window_info anchor="bottom" id="Services" order="4" />
+      <window_info anchor="bottom" id="Terminal" order="3" weight="0.31453252" />
+      <window_info active="true" anchor="bottom" id="Debug" order="4" visible="true" weight="0.34400406" />
+      <window_info anchor="bottom" id="Services" order="5" />
       <window_info anchor="right" id="Endpoints" show_stripe_button="false" />
       <window_info anchor="right" id="Coverage" show_stripe_button="false" side_tool="true" />
       <window_info anchor="right" content_ui="combo" id="Notifications" order="0" weight="0.25" />
@@ -61,9 +121,54 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
+    <configuration name="basic-tna" type="Remote">
+      <module name="basic-tna" />
+      <option name="USE_SOCKET_TRANSPORT" value="true" />
+      <option name="SERVER_MODE" value="false" />
+      <option name="SHMEM_ADDRESS" />
+      <option name="HOST" value="localhost" />
+      <option name="PORT" value="5005" />
+      <option name="AUTO_RESTART" value="false" />
+      <RunnerSettings RunnerId="Debug">
+        <option name="DEBUG_PORT" value="5005" />
+        <option name="LOCAL" value="false" />
+      </RunnerSettings>
+      <method v="2" />
+    </configuration>
   </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-jdk-9823dce3aa75-28b599e66164-intellij.indexing.shared.core-IU-242.23726.38" />
+        <option value="bundled-js-predefined-d6986cc7102b-5c90d61e3bab-JavaScript-IU-242.23726.38" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="应用程序级" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
+    <task active="true" id="Default" summary="默认任务">
+      <changelist id="f088399d-ad91-4f7a-9fa1-4d7d343c44c1" name="更改" comment="" />
+      <created>1732377093859</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1732377093859</updated>
+      <workItem from="1732377095868" duration="8911000" />
+    </task>
     <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/org/stratumproject/basic/tna/behaviour/BasicInterpreter.java</url>
+          <line>1088</line>
+          <option name="timeStamp" value="9" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

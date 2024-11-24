@@ -16,6 +16,7 @@ org/stratumproject/basic/tna/behaviour/BasicTreatmentInterpreter1.class
 org/stratumproject/basic/tna/behaviour/AbstractBasicHandlerBehavior.class
 org/stratumproject/basic/tna/behaviour/pipeliner/Commons.class
 org/stratumproject/basic/tna/behaviour/BasicInterpreter.class
+org/stratumproject/basic/tna/behaviour/BasicTreatmentInterpreter6.class
 org/stratumproject/basic/tna/behaviour/BasicCapabilities.class
 org/stratumproject/basic/tna/behaviour/BasicTreatmentInterpreter3.class
 org/stratumproject/basic/tna/behaviour/pipeliner/BasicPipeliner$1.class

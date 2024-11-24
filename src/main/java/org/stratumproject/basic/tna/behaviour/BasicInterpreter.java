@@ -78,6 +78,7 @@ import static org.stratumproject.basic.tna.behaviour.BasicTreatmentInterpreter2.
 import static org.stratumproject.basic.tna.behaviour.BasicTreatmentInterpreter3.mapTable3Treatment;
 import static org.stratumproject.basic.tna.behaviour.BasicTreatmentInterpreter4.mapTable4Treatment;
 import static org.stratumproject.basic.tna.behaviour.BasicTreatmentInterpreter5.mapTable5Treatment;
+import static org.stratumproject.basic.tna.behaviour.BasicTreatmentInterpreter6.mapTable6Treatment;
 
 /**
  * Interpreter for fabric-tna pipeline.
@@ -91,7 +92,8 @@ public class BasicInterpreter extends AbstractBasicHandlerBehavior
             P4InfoConstants.BASIC_INGRESS_TABLE2_TABLE2,
             P4InfoConstants.BASIC_INGRESS_TABLE3_TABLE3,
             P4InfoConstants.BASIC_INGRESS_TABLE4_TABLE4,
-            P4InfoConstants.BASIC_INGRESS_TABLE5_TABLE5);
+            P4InfoConstants.BASIC_INGRESS_TABLE5_TABLE5,
+            P4InfoConstants.BASIC_INGRESS_TABLE6_TABLE6);
     private static final Map<Integer, PiTableId> TABLE_MAP =
             new ImmutableMap.Builder<Integer, PiTableId>()
                     .put(0, P4InfoConstants.BASIC_INGRESS_TABLE0_TABLE0)
@@ -100,6 +102,7 @@ public class BasicInterpreter extends AbstractBasicHandlerBehavior
                     .put(3, P4InfoConstants.BASIC_INGRESS_TABLE3_TABLE3)
                     .put(4, P4InfoConstants.BASIC_INGRESS_TABLE4_TABLE4)
                     .put(5, P4InfoConstants.BASIC_INGRESS_TABLE5_TABLE5)
+                    .put(6, P4InfoConstants.BASIC_INGRESS_TABLE6_TABLE6)
                     .build();
     private static final ImmutableMap<Criterion.Type, PiMatchFieldId> CRITERION_MAP =
             ImmutableMap.<Criterion.Type, PiMatchFieldId>builder()
@@ -173,6 +176,8 @@ public class BasicInterpreter extends AbstractBasicHandlerBehavior
             return mapTable4Treatment(treatment, piTableId);
         } else if (piTableId.equals(P4InfoConstants.BASIC_INGRESS_TABLE5_TABLE5)) {
             return mapTable5Treatment(treatment, piTableId);
+        } else if (piTableId.equals(P4InfoConstants.BASIC_INGRESS_TABLE6_TABLE6)) {
+            return mapTable6Treatment(treatment, piTableId);
         } else {
             throw new PiInterpreterException(format(
                     "Treatment mapping not supported for table '%s'", piTableId));
@@ -852,7 +857,70 @@ public class BasicInterpreter extends AbstractBasicHandlerBehavior
         return flowRule;
     }
 
-    public void postFlow(String modalType, int switchID, int port, int srcHost, int dstHost) {
+    public FlowRule applyFlexIPFlow(DeviceId deviceId, ApplicationId appId, int port, int srcId, int dstId, ByteBuffer buffer) {
+        int flexip_prefix = ((buffer.get(0) & 0xff) << 24 | (buffer.get(1) & 0xff) << 16 | (buffer.get(2) & 0xff) << 8 | (buffer.get(3) & 0xff));
+        int srcFormat = flexip_prefix >> 26 & 0x3;
+        int dstFormat = flexip_prefix >> 24 & 0x3;
+        int srcLength = flexip_prefix >> 12 & 0x7ff;
+        int dstLength = flexip_prefix & 0x7ff;
+        log.warn("flexip_prefix:{}, srcLength:{}, dstLength:{}", flexip_prefix, srcLength, dstLength);
+        PiMatchFieldId etherTypeFieldId = PiMatchFieldId.of("hdr.ethernet.ether_type");
+        int etherType = 0x3690;
+        PiMatchFieldId srcFormatFieldId = PiMatchFieldId.of("hdr.flexip.srcFormat");
+        PiMatchFieldId dstFormatFieldId = PiMatchFieldId.of("hdr.flexip.dstFormat");
+        PiMatchFieldId srcAddrFieldId = PiMatchFieldId.of("hdr.flexip.srcAddr");
+        byte[] srcAddr = new byte[srcLength/8];
+        for(int i=0;i<srcLength/8;i++) {
+            srcAddr[i] = buffer.get(i+4);
+        }
+        log.warn("srcFlexIP:{}",srcAddr);
+        // if (srcLength % 8 != 0) {
+        //     byte lastByte = (byte)(buffer.get(4 + srcLength/8) & 0xff >> (8 - srcLength % 8));
+        //     srcAddr = Arrays.copyOf(srcAddr, srcAddr.length + 1);
+        //     srcAddr[srcAddr.length - 1] = lastByte;
+        // }
+        PiMatchFieldId dstAddrFieldId = PiMatchFieldId.of("hdr.flexip.dstAddr");
+        byte[] dstAddr = new byte[dstLength/8];
+        for(int i=0;i<dstLength/8;i++) {
+            dstAddr[i] = buffer.get(i+52);
+        }
+        log.warn("dstFlexIP:{}",dstAddr);
+        // if (dstLength % 8 != 0) {
+        //     byte lastByte = (byte)(buffer.get(4 + dstLength/8) & 0xff >> (8 - dstLength % 8));
+        //     dstAddr = Arrays.copyOf(dstAddr, dstAddr.length + 1);
+        //     dstAddr[dstAddr.length - 1] = lastByte;
+        // }
+        PiCriterion criteria = PiCriterion.builder()
+            .matchExact(etherTypeFieldId, etherType)
+            .matchExact(srcFormatFieldId, srcFormat)
+            .matchExact(dstFormatFieldId, dstFormat)
+            .matchExact(srcAddrFieldId, srcAddr)
+            .matchExact(dstAddrFieldId, dstAddr)
+            .build();
+        TrafficSelector selector = DefaultTrafficSelector.builder()
+            .add(criteria)
+            .build();
+        PiTableAction piTableAction = PiAction.builder()
+            .withId(PiActionId.of("ingress.set_next_flexip_hop"))
+            .withParameter(new PiActionParam(PiActionParamId.of("dst_port"), ImmutableByteSequence.copyFrom(port)))
+            .build();                
+        TrafficTreatment treatment = DefaultTrafficTreatment.builder()
+            .piTableAction(piTableAction)
+            .build();
+        FlowRule flowRule = DefaultFlowRule.builder()
+            .forDevice(deviceId)
+            .forTable(6)
+            .withPriority(10)
+            .withHardTimeout(0)
+            .withSelector(selector)
+            .withTreatment(treatment)
+            .makePermanent()
+            .fromApp(appId)
+            .build();
+        return flowRule;
+    }
+
+    public void postFlow(String modalType, int switchID, int port, int srcHost, int dstHost, ByteBuffer buffer) {
         CoreService coreService = handler().get(CoreService.class);
         ApplicationId appId = coreService.getAppId("org.stratumproject.basic-tna");
         FlowRuleService flowRuleService = handler().get(FlowRuleService.class);
@@ -885,12 +953,17 @@ public class BasicInterpreter extends AbstractBasicHandlerBehavior
                 flowRuleService.applyFlowRules(flowRule);
                 log.warn("NDN flow rule applied! {}", flowRule);
                 break;
+            case "flexip":
+                flowRule = applyFlexIPFlow(deviceId, appId, port, srcId, dstId, buffer);
+                flowRuleService.applyFlowRules(flowRule);
+                log.warn("FlexIP flow rule applied! {}", flowRule);
+                break;
             default:
                 log.error("Invalid modal type: {}", modalType);
         }
     }
 
-    public void executeAddFlow(String modalType, int srcHost, int dstHost) {
+    public void executeAddFlow(String modalType, int srcHost, int dstHost, ByteBuffer buffer) {
         int srcSwitch = srcHost-100;   // h180-eth0 <-> s80-eth2
         int dstSwitch = dstHost-100;   // h166-eth0 <-> s66-eth2
         ArrayList<Integer> involvedSwitches = new ArrayList<>();
@@ -899,7 +972,7 @@ public class BasicInterpreter extends AbstractBasicHandlerBehavior
         // srcSwitch至lca(srcSwitch,dstSwitch)路径中交换机需要下发流表（当前节点向父节点转发）
         // lca(srcSwitch,dstSwitch)至dstSwitch路径中交换机需要下发流表（当前节点的父节点向当前节点转发）
 
-        postFlow(modalType, dstSwitch, 2, srcHost, dstHost);   // dstSwitch需要向网卡eth2的端口转发
+        postFlow(modalType, dstSwitch, 2, srcHost, dstHost, buffer);   // dstSwitch需要向网卡eth2的端口转发
         involvedSwitches.add(dstSwitch);
 
         int srcDepth = (int) Math.floor(Math.log(srcSwitch)/Math.log(2)) + 1;
@@ -911,7 +984,7 @@ public class BasicInterpreter extends AbstractBasicHandlerBehavior
         // srcSwitch深度更大
         if (srcDepth > dstDepth) {
             while (srcDepth != dstDepth) {
-                postFlow(modalType, srcSwitch, 1, srcHost, dstHost);  // 只能通过eth1向父节点转发
+                postFlow(modalType, srcSwitch, 1, srcHost, dstHost, buffer);  // 只能通过eth1向父节点转发
                 involvedSwitches.add(srcSwitch);
                 srcSwitch = (int) Math.floor(srcSwitch / 2);
                 srcDepth = srcDepth - 1;
@@ -923,9 +996,9 @@ public class BasicInterpreter extends AbstractBasicHandlerBehavior
             while (srcDepth != dstDepth) {
                 int father = (int) Math.floor(dstSwitch / 2);
                 if (father*2 == dstSwitch) {
-                    postFlow(modalType, father, 2, srcHost, dstHost);    // 通过eth2向左儿子转发
+                    postFlow(modalType, father, 2, srcHost, dstHost, buffer);    // 通过eth2向左儿子转发
                 } else {
-                    postFlow(modalType, father, 3, srcHost, dstHost);   // 通过eth3向右儿子转发
+                    postFlow(modalType, father, 3, srcHost, dstHost, buffer);   // 通过eth3向右儿子转发
                 }
                 involvedSwitches.add(father);
                 dstSwitch = (int) Math.floor(dstSwitch / 2);
@@ -935,12 +1008,12 @@ public class BasicInterpreter extends AbstractBasicHandlerBehavior
 
         // srcSwitch和dstSwitch在同一层，srcSwitch向父节点转发，dstSwitch的父节点向dstSwitch转发
         while(true){
-            postFlow(modalType, srcSwitch, 1, srcHost, dstHost);
+            postFlow(modalType, srcSwitch, 1, srcHost, dstHost, buffer);
             int father = (int) Math.floor(dstSwitch / 2);
             if (father*2 == dstSwitch) {
-                postFlow(modalType, father, 2, srcHost, dstHost);
+                postFlow(modalType, father, 2, srcHost, dstHost, buffer);
             } else {
-                postFlow(modalType, father, 3, srcHost, dstHost);
+                postFlow(modalType, father, 3, srcHost, dstHost, buffer);
             }
             involvedSwitches.add(srcSwitch);
             involvedSwitches.add(father);
@@ -981,10 +1054,6 @@ public class BasicInterpreter extends AbstractBasicHandlerBehavior
         return x * 100 + i;
     }
 
-    private int transferFlexIP2Host(ByteBuffer buffer) {
-        
-    }
-
     public void handleModalPacket(int pktType, byte[] payload) {
         String modalType = "";
         int srcHost = 0, dstHost = 0;
@@ -1018,8 +1087,199 @@ public class BasicInterpreter extends AbstractBasicHandlerBehavior
                 break;
             case 0x3690:    // FLEXIP
                 modalType = "flexip";
-                srcHost = transferFlexIP2Host(buffer);
-                dstHost = transferFlexIP2Host(buffer);
+                int format_restrained = 0;
+                int format_extendable = 1;
+                int format_hierarchical = 2;
+                int format_multiSemantics = 3;
+
+                int flexip_prefix = ((buffer.get(0) & 0xff) << 24 | (buffer.get(1) & 0xff) << 16 | (buffer.get(2) & 0xff) << 8 | (buffer.get(3) & 0xff));
+                int srcFormat = flexip_prefix >> 26 & 0x3;
+                int dstFormat = flexip_prefix >> 24 & 0x3;
+                int srcLength = flexip_prefix >> 12 & 0x7ff;
+                int dstLength = flexip_prefix & 0x7ff;
+                // 获取srcHost
+                buffer.position(4);
+                if (srcFormat == format_restrained) {
+                    srcHost = vmx * 100 + (buffer.get() & 0xff);
+                } else if (srcFormat == format_extendable) {
+                    int srcIndex = buffer.get() & 0xff;
+                    if (srcIndex == 240) {  // F0
+                        byte[] FlexIP = new byte[2];
+                        buffer.get(FlexIP, 0, 2);
+                        int flexip = ((FlexIP[0] * 0xff) << 8) + 
+                                     (FlexIP[1] & 0xff);
+                        int x = (flexip - 2048) / 100;
+                        int i = flexip - 2048 - x * 100 + 64;
+                        srcHost = x * 100 + i;
+                    } else if (srcIndex == 241) {   // F1
+                        byte[] FlexIP = new byte[4];
+                        buffer.get(FlexIP, 0, 4);
+                        int flexip = ((FlexIP[0] & 0xff) << 24) + 
+                                     ((FlexIP[1] & 0xff) << 16) + 
+                                     ((FlexIP[2] & 0xff) << 8) + 
+                                     (FlexIP[3] & 0xff);
+                        int x = (flexip - 202271789) / 100000;
+                        int i = flexip - 202271789 - x * 100000 + 64;
+                        srcHost = x * 100 + i;
+                    } else if (srcIndex == 242) {   // F2
+                        byte[] FlexIP = new byte[8];
+                        buffer.get(FlexIP, 0, 8);
+                        long flexip = (((long)FlexIP[0] & 0xff) << 56) +
+                                      (((long)FlexIP[1] & 0xff) << 48) + 
+                                      (((long)FlexIP[2] & 0xff) << 40) + 
+                                      (((long)FlexIP[3] & 0xff) << 32) +
+                                      (((long)FlexIP[4] & 0xff) << 24) + 
+                                      (((long)FlexIP[5] & 0xff) << 16) + 
+                                      (((long)FlexIP[6] & 0xff) << 8) + 
+                                      ((long)FlexIP[7] & 0xff);
+                        long x = (flexip - (1L<<50)) / 100000000;
+                        long i = flexip - (1L<<50) - x * 100000000 + 64;
+                        srcHost = (int)(x * 100 + i);
+                    } else {    // F4
+                        byte[] FlexIP = new byte[32];
+                        buffer.get(FlexIP, 0, 32);
+                        long flexip = ((long)FlexIP[31] & 0xff) +
+                                      (((long)FlexIP[30] & 0xff) << 8) + 
+                                      (((long)FlexIP[29] & 0xff) << 16) + 
+                                      (((long)FlexIP[28] & 0xff) << 24) + 
+                                      (((long)FlexIP[27] & 0xff) << 32) + 
+                                      (((long)FlexIP[26] & 0xff) << 40);
+                        long x = flexip / 100000000000L;
+                        long i = flexip - x * 100000000000L + 64L;
+                        srcHost = (int)(x * 100 + i);
+                    }
+                } else {
+                    int srcIndex = buffer.get() & 0xff;
+                    int afterByte = buffer.get() & 0xff;
+                    if (afterByte == 240) {     // F0
+                        byte[] FlexIP = new byte[2];
+                        buffer.get(FlexIP, 0, 2);
+                        int flexip = ((FlexIP[0] & 0xff) << 8) + 
+                                     (FlexIP[1] & 0xff);
+                        int x = (flexip - 2048) / 100;
+                        int i = flexip - 2048 - x * 100 + 64;
+                        srcHost = x * 100 + i;
+                    } else if (afterByte == 241) {      // F1
+                        byte[] FlexIP = new byte[4];
+                        buffer.get(FlexIP, 0, 4);
+                        int flexip = ((FlexIP[0] & 0xff) << 24) + 
+                                     ((FlexIP[1] & 0xff) << 16) + 
+                                     ((FlexIP[2] & 0xff) << 8) + 
+                                     (FlexIP[3] & 0xff);
+                        int x = (flexip - 202271789) / 100000;
+                        int i = flexip - 202271789 - x * 100000 + 64;
+                        srcHost = x * 100 + i;
+                    } else if (afterByte == 242) {      // F2
+                        byte[] FlexIP = new byte[8];
+                        buffer.get(FlexIP, 0, 8);
+                        long flexip = (((long)FlexIP[0] & 0xff) << 56) +
+                                      (((long)FlexIP[1] & 0xff) << 48) + 
+                                      (((long)FlexIP[2] & 0xff) << 40) + 
+                                      (((long)FlexIP[3] & 0xff) << 32) +
+                                      (((long)FlexIP[4] & 0xff) << 24) + 
+                                      (((long)FlexIP[5] & 0xff) << 16) + 
+                                      (((long)FlexIP[6] & 0xff) << 8) + 
+                                      ((long)FlexIP[7] & 0xff);
+                        long x = (flexip - (1L<<50)) / 100000000;
+                        long i = flexip - (1L<<50) - x * 100000000 + 64;
+                        srcHost = (int)(x * 100 + i);
+                    } else {
+                        srcHost = vmx * 100 + afterByte;
+                    }
+                }
+                // 获取dstHost
+                buffer.position(52);
+                if (dstFormat == format_restrained) {
+                    dstHost = vmx * 100 + (buffer.get() & 0xff);
+                } else if (dstFormat == format_extendable) {
+                    int dstIndex = buffer.get() & 0xff;
+                    if (dstIndex == 240) {  // F0
+                        byte[] FlexIP = new byte[2];
+                        buffer.get(FlexIP, 0, 2);
+                        int flexip = ((FlexIP[0] * 0xff) << 8) + 
+                                     (FlexIP[1] & 0xff);
+                        int x = (flexip - 2048) / 100;
+                        int i = flexip - 2048 - x * 100 + 64;
+                        dstHost = x * 100 + i;
+                    } else if (dstIndex == 241) {   // F1
+                        byte[] FlexIP = new byte[4];
+                        buffer.get(FlexIP, 0, 4);
+                        int flexip = ((FlexIP[0] & 0xff) << 24) + 
+                                     ((FlexIP[1] & 0xff) << 16) + 
+                                     ((FlexIP[2] & 0xff) << 8) + 
+                                     (FlexIP[3] & 0xff);
+                        int x = (flexip - 202271789) / 100000;
+                        int i = flexip - 202271789 - x * 100000 + 64;
+                        dstHost = x * 100 + i;
+                    } else if (dstIndex == 242) {   // F2
+                        byte[] FlexIP = new byte[8];
+                        buffer.get(FlexIP, 0, 8);
+                        long flexip = (((long)FlexIP[0] & 0xff) << 56) +
+                                      (((long)FlexIP[1] & 0xff) << 48) + 
+                                      (((long)FlexIP[2] & 0xff) << 40) + 
+                                      (((long)FlexIP[3] & 0xff) << 32) +
+                                      (((long)FlexIP[4] & 0xff) << 24) + 
+                                      (((long)FlexIP[5] & 0xff) << 16) + 
+                                      (((long)FlexIP[6] & 0xff) << 8) + 
+                                      ((long)FlexIP[7] & 0xff);
+                        long x = (flexip - (1L<<50)) / 100000000L;
+                        long i = flexip - (1L<<50) - x * 100000000L + 64L;
+                        dstHost = (int)(x * 100 + i);
+                    } else {    // F4
+                        byte[] FlexIP = new byte[32];
+                        buffer.get(FlexIP, 0, 32);
+                        long flexip = ((long)FlexIP[31] & 0xff) +
+                                      (((long)FlexIP[30] & 0xff) << 8) + 
+                                      (((long)FlexIP[29] & 0xff) << 16) + 
+                                      (((long)FlexIP[28] & 0xff) << 24) + 
+                                      (((long)FlexIP[27] & 0xff) << 32) + 
+                                      (((long)FlexIP[26] & 0xff) << 40);
+                        long x = flexip / 100000000000L;
+                        long i = flexip - x * 100000000000L + 64L;
+                        dstHost = (int)(x * 100 + i);
+                    }
+                } else {
+                    int dstIndex = buffer.get() & 0xff;
+                    int afterByte = buffer.get() & 0xff;
+                    if (afterByte == 240) {
+                        byte[] FlexIP = new byte[2];
+                        buffer.get(FlexIP, 0, 2);
+                        int flexip = ((FlexIP[0] & 0xff) << 8) + 
+                                     (FlexIP[1] & 0xff);
+                        int x = (flexip - 2048) / 100;
+                        int i = flexip - 2048 - x * 100 + 64;
+                        dstHost = x * 100 + i;
+                    } else if (afterByte == 241) {
+                        byte[] FlexIP = new byte[4];
+                        buffer.get(FlexIP, 0, 4);
+                        int flexip = ((FlexIP[0] & 0xff) << 24) + 
+                                     ((FlexIP[1] & 0xff) << 16) + 
+                                     ((FlexIP[2] & 0xff) << 8) + 
+                                     (FlexIP[3] & 0xff);
+                        int x = (flexip - 202271789) / 100000;
+                        int i = flexip - 202271789 - x * 100000 + 64;
+                        dstHost = x * 100 + i;
+                    } else if (afterByte == 242) {
+                        byte[] FlexIP = new byte[8];
+                        buffer.get(FlexIP, 0, 8);
+                        long flexip = (((long)FlexIP[0] & 0xff) << 56) +
+                                      (((long)FlexIP[1] & 0xff) << 48) + 
+                                      (((long)FlexIP[2] & 0xff) << 40) + 
+                                      (((long)FlexIP[3] & 0xff) << 32) +
+                                      (((long)FlexIP[4] & 0xff) << 24) + 
+                                      (((long)FlexIP[5] & 0xff) << 16) + 
+                                      (((long)FlexIP[6] & 0xff) << 8) + 
+                                      ((long)FlexIP[7] & 0xff);
+                        long x = (flexip - (1L<<50)) / 100000000L;
+                        long i = flexip - (1L<<50) - x * 100000000L + 64;
+                        dstHost = (int)(x * 100 + i);
+                    } else {
+                        dstHost = vmx * 100 + afterByte;
+                    }
+                }
+                log.warn("srcHost:{}, dstHost:{}", srcHost, dstHost);
+                // srcHost = transferFlexIP2Host(srcFormat, buffer);
+                // dstHost = transferFlexIP2Host(dstFormat, buffer);
                 break;
         }
         if (modalType == "ip" || modalType == "id" || modalType == "geo" || modalType == "mf" || modalType == "ndn" || modalType == "flexip") {
@@ -1033,7 +1293,7 @@ public class BasicInterpreter extends AbstractBasicHandlerBehavior
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            executeAddFlow(modalType, srcHost, dstHost);
+            executeAddFlow(modalType, srcHost, dstHost, buffer);
         }
     }
 

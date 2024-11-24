@@ -82,6 +82,13 @@ public final class P4InfoConstants {
     public static final PiActionId BASIC_INGRESS_TABLE5_DROP =
             PiActionId.of("ingress.drop");   
 
+    public static final PiTableId BASIC_INGRESS_TABLE6_TABLE6 =
+           PiTableId.of("ingress.routing_flexip_table");
+    public static final PiActionId BASIC_INGRESS_TABLE6_SET_OUTPUT =
+            PiActionId.of("ingress.set_next_flexip_hop");
+    public static final PiActionId BASIC_INGRESS_TABLE6_DROP =
+            PiActionId.of("ingress.drop");  
+
     // Header field IDs
     public static final PiMatchFieldId HDR_EG_PORT =
             PiMatchFieldId.of("eg_port");
