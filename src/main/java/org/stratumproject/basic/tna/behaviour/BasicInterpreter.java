@@ -289,12 +289,12 @@ public class BasicInterpreter extends AbstractBasicHandlerBehavior
                     receivedFrom = translateSwitchPort(receivedFrom);
                 }
                 ByteBuffer rawData = ByteBuffer.wrap(packetIn.data().asArray());
-                pktType = ethPkt.getEtherType();
+                pktType = ethPkt.getEtherType() & 0xffff;
                 log.warn("Packet: {}", ethPkt);
                 log.warn("new Pkt is {} type from device {} port {}",pktType,deviceId,portByteSequence);
                 byte[] payload = ethPkt.getPayload().serialize();
                 // 解析模态、计算路径、下发流表
-                handleModalPacket(pktType, ethPkt.getPayload().serialize());
+                handleModalPacket(pktType, ethPkt.getPayload().serialize(), deviceId);
                 // 解析各种模态
                 // parserPkt(pktType,payload);
                 // sendToMMQueue(ethPkt);
@@ -378,7 +378,7 @@ public class BasicInterpreter extends AbstractBasicHandlerBehavior
         int level = (int) (Math.log(switchID)/Math.log(2)) + 1;
         log.warn("generateIPFlows srcIdentifier:{}, dstIdentifier:{}, srcIP:{}, dstIP:{}",
                 srcIdentifier, dstIdentifier, srcIP, dstIP);
-        String deviceID = String.format("device:domain1:group4:level%d:s%d",level, switchID + 300);
+        String deviceID = String.format("device:domain1:group4:level%d:s%d",level, switchID + vmx * 100);
         JSONObject flowObject = new JSONObject();
         flowObject.put("priority", 10);
         flowObject.put("timeout", 0);
@@ -470,7 +470,7 @@ public class BasicInterpreter extends AbstractBasicHandlerBehavior
         int level = (int) (Math.log(switchID)/Math.log(2)) + 1;
         log.warn("generateIDFlows srcIdentifier:{}, dstIdentifier:{}, srcIdentity:{}, dstIdentity:{}",
                 srcIdentifier, dstIdentifier, srcIdentity, dstIdentity);
-        String deviceID = String.format("device:domain1:group4:level%d:s%d",level, switchID + 300);
+        String deviceID = String.format("device:domain1:group4:level%d:s%d",level, switchID + vmx * 100);
         JSONObject flowObject = new JSONObject();
         flowObject.put("priority", 10);
         flowObject.put("timeout", 0);
@@ -512,7 +512,7 @@ public class BasicInterpreter extends AbstractBasicHandlerBehavior
         int level = (int) (Math.log(switchID)/Math.log(2)) + 1;
         log.warn("generateMFFlows srcIdentifier:{}, dstIdentifier:{}, srcMFGuid:{}, dstMFGuid:{}",
                 srcIdentifier, dstIdentifier, srcMFGuid, dstMFGuid);
-        String deviceID = String.format("device:domain1:group4:level%d:s%d",level, switchID + 300);
+        String deviceID = String.format("device:domain1:group4:level%d:s%d",level, switchID + vmx * 100);
         JSONObject flowObject = new JSONObject();
         flowObject.put("priority", 10);
         flowObject.put("timeout", 0);
@@ -555,7 +555,7 @@ public class BasicInterpreter extends AbstractBasicHandlerBehavior
         int level = (int) (Math.log(switchID)/Math.log(2)) + 1;
         log.warn("generateNDNFlows srcIdentifier:{}, dstIdentifier:{}, srcNDNName:{}, dstNDNName:{}, ndnContent:{}",
                 srcIdentifier, dstIdentifier, srcNDNName, dstNDNName, ndnContent);
-        String deviceID = String.format("device:domain1:group4:level%d:s%d",level, switchID + 300);
+        String deviceID = String.format("device:domain1:group4:level%d:s%d",level, switchID + vmx * 100);
         JSONObject flowObject = new JSONObject();
         flowObject.put("priority", 10);
         flowObject.put("timeout", 0);
@@ -770,10 +770,51 @@ public class BasicInterpreter extends AbstractBasicHandlerBehavior
         return flowRule;
     }
 
-    public void applyGeoFlow(DeviceId deviceId, ApplicationId appId, int port, int srcId, int dstId){
+    public FlowRule applyGEOFlow(DeviceId deviceId, ApplicationId appId, int port, int srcId, int dstId, ByteBuffer buffer){
         PiMatchFieldId etherTypeFieldId = PiMatchFieldId.of("hdr.ethernet.ether_type");
         int etherType = 0x8947;
-        return;
+        PiMatchFieldId geoAreaPosLatFieldId = PiMatchFieldId.of("hdr.gbc.geoAreaPosLat");
+        byte[] geoAreaPosLat = new byte[4];
+        buffer.position(40);
+        for(int i=0;i<4;i++) {
+            geoAreaPosLat[i] = buffer.get();
+        }
+        PiMatchFieldId geoAreaPosLonFieldId = PiMatchFieldId.of("hdr.gbc.geoAreaPosLon");
+        byte[] geoAreaPosLon = new byte[4];
+        buffer.position(44);
+        for(int i=0;i<4;i++) {
+            geoAreaPosLon[i] = buffer.get();
+        }
+        PiMatchFieldId disaFieldId = PiMatchFieldId.of("hdr.gbc.disa");
+        PiMatchFieldId disbFieldId = PiMatchFieldId.of("hdr.gbc.disb");
+        PiCriterion criteria = PiCriterion.builder()
+            .matchExact(etherTypeFieldId, etherType)
+            .matchExact(geoAreaPosLatFieldId, geoAreaPosLat)
+            .matchExact(geoAreaPosLonFieldId, geoAreaPosLon)
+            .matchExact(disaFieldId, new byte[]{0})
+            .matchExact(disbFieldId, new byte[]{0})
+            .build();
+        TrafficSelector selector = DefaultTrafficSelector.builder()
+            .add(criteria)
+            .build();
+        PiTableAction piTableAction = PiAction.builder()
+            .withId(PiActionId.of("ingress.geo_ucast_route"))
+            .withParameter(new PiActionParam(PiActionParamId.of("dst_port"), ImmutableByteSequence.copyFrom(port)))
+            .build();                
+        TrafficTreatment treatment = DefaultTrafficTreatment.builder()
+            .piTableAction(piTableAction)
+            .build();
+        FlowRule flowRule = DefaultFlowRule.builder()
+            .forDevice(deviceId)
+            .forTable(3)
+            .withPriority(10)
+            .withHardTimeout(0)
+            .withSelector(selector)
+            .withTreatment(treatment)
+            .makePermanent()
+            .fromApp(appId)
+            .build();
+        return flowRule;
     }
 
     public FlowRule applyMFFlow(DeviceId deviceId, ApplicationId appId, int port, int srcId, int dstId){
@@ -929,7 +970,7 @@ public class BasicInterpreter extends AbstractBasicHandlerBehavior
         int level = (int) (Math.log(switchID)/Math.log(2)) + 1;
         int srcId = srcHost - vmx * 100;
         int dstId = dstHost - vmx * 100; 
-        DeviceId deviceId = DeviceId.deviceId(String.format("device:domain1:group4:level%d:s%d",level, switchID + 300));
+        DeviceId deviceId = DeviceId.deviceId(String.format("device:domain1:group4:level%d:s%d",level, switchID + vmx * 100));
         FlowRule flowRule;
         switch (modalType) {
             case "ip":
@@ -943,7 +984,9 @@ public class BasicInterpreter extends AbstractBasicHandlerBehavior
                 log.warn("ID flow rule applied! {}", flowRule);
                 break;
             case "geo":
-                
+                flowRule = applyGEOFlow(deviceId, appId, port, srcId, dstId, buffer);
+                flowRuleService.applyFlowRules(flowRule);
+                log.warn("GEO flow rule applied! {}", flowRule);
                 break;
             case "mf":
                 flowRule = applyMFFlow(deviceId, appId, port, srcId, dstId);
@@ -1056,11 +1099,16 @@ public class BasicInterpreter extends AbstractBasicHandlerBehavior
         return x * 100 + i;
     }
 
-    public void handleModalPacket(int pktType, byte[] payload) {
+    private int transferGEO2Host(int param) {
+        log.warn("transferGEO2Host param:{}", param);
+        return vmx * 100 + param + 63;
+    }
+
+    public void handleModalPacket(int pktType, byte[] payload, DeviceId deviceId) {
         String modalType = "";
         int srcHost = 0, dstHost = 0;
         ByteBuffer buffer = ByteBuffer.wrap(payload);
-        log.warn("payload: {}, buffer: {}", payload, buffer);
+        log.warn("payload: {}, buffer: {}, deviceId: {}", payload, buffer, deviceId);
         pktType = (pktType + 65536) % 65536;            // pktType是short类型，可能溢出成负数
         switch(pktType){
             case 0x0800:    // IP
@@ -1075,7 +1123,9 @@ public class BasicInterpreter extends AbstractBasicHandlerBehavior
                 break;
             case 0x8947:    // GEO
                 modalType = "geo";
-
+                String deviceIdStr = deviceId.toString();
+                srcHost = Integer.parseInt(deviceIdStr.substring(deviceIdStr.length() - 3));
+                dstHost = transferGEO2Host(buffer.getInt(40) & 0xffffffff);
                 break;
             case 0x27c0:    // MF
                 modalType = "mf";

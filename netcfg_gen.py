@@ -3,6 +3,8 @@ import json
 # 初始化devices字典
 devices = {}
 
+vmx = 1
+
 def get_level(i):
     if i == 1:
         return "level1"
@@ -21,10 +23,10 @@ def get_level(i):
 
 # 循环创建100个设备
 for i in range(1, 101):
-    device_id = f"device:domain1:group4:{get_level(i)}:s{300+i}"  # 格式化设备ID，确保它是5位数
+    device_id = f"device:domain1:group4:{get_level(i)}:s{100 * vmx + i}"  # 格式化设备ID，确保它是5位数
     devices[device_id] = {
         "basic": {
-            "managementAddress": f"grpc://218.199.84.171:{50001 + i - 1}?device_id=1",
+            "managementAddress": f"grpc://218.199.84.170:{50001 + i - 1}?device_id=1",
             "driver": "stratum-bmv2",
             "pipeconf": "org.stratumproject.basic.bmv2"
         }
