@@ -870,8 +870,9 @@ public class BasicInterpreter extends AbstractBasicHandlerBehavior
         PiMatchFieldId dstFormatFieldId = PiMatchFieldId.of("hdr.flexip.dstFormat");
         PiMatchFieldId srcAddrFieldId = PiMatchFieldId.of("hdr.flexip.srcAddr");
         byte[] srcAddr = new byte[srcLength/8];
+        buffer.position(52-srcLength/8);
         for(int i=0;i<srcLength/8;i++) {
-            srcAddr[i] = buffer.get(i+4);
+            srcAddr[i] = buffer.get();
         }
         log.warn("srcFlexIP:{}",srcAddr);
         // if (srcLength % 8 != 0) {
@@ -881,8 +882,9 @@ public class BasicInterpreter extends AbstractBasicHandlerBehavior
         // }
         PiMatchFieldId dstAddrFieldId = PiMatchFieldId.of("hdr.flexip.dstAddr");
         byte[] dstAddr = new byte[dstLength/8];
+        buffer.position(100-dstLength/8);
         for(int i=0;i<dstLength/8;i++) {
-            dstAddr[i] = buffer.get(i+52);
+            dstAddr[i] = buffer.get();
         }
         log.warn("dstFlexIP:{}",dstAddr);
         // if (dstLength % 8 != 0) {
@@ -1098,7 +1100,7 @@ public class BasicInterpreter extends AbstractBasicHandlerBehavior
                 int srcLength = flexip_prefix >> 12 & 0x7ff;
                 int dstLength = flexip_prefix & 0x7ff;
                 // 获取srcHost
-                buffer.position(4);
+                buffer.position(52-srcLength/8);
                 if (srcFormat == format_restrained) {
                     srcHost = vmx * 100 + (buffer.get() & 0xff);
                 } else if (srcFormat == format_extendable) {
@@ -1118,8 +1120,8 @@ public class BasicInterpreter extends AbstractBasicHandlerBehavior
                                      ((FlexIP[1] & 0xff) << 16) + 
                                      ((FlexIP[2] & 0xff) << 8) + 
                                      (FlexIP[3] & 0xff);
-                        int x = (flexip - 202271789) / 100000;
-                        int i = flexip - 202271789 - x * 100000 + 64;
+                        int x = (flexip - 202271720) / 100000;
+                        int i = flexip - 202271720 - x * 100000 + 64;
                         srcHost = x * 100 + i;
                     } else if (srcIndex == 242) {   // F2
                         byte[] FlexIP = new byte[8];
@@ -1166,8 +1168,8 @@ public class BasicInterpreter extends AbstractBasicHandlerBehavior
                                      ((FlexIP[1] & 0xff) << 16) + 
                                      ((FlexIP[2] & 0xff) << 8) + 
                                      (FlexIP[3] & 0xff);
-                        int x = (flexip - 202271789) / 100000;
-                        int i = flexip - 202271789 - x * 100000 + 64;
+                        int x = (flexip - 202271720) / 100000;
+                        int i = flexip - 202271720 - x * 100000 + 64;
                         srcHost = x * 100 + i;
                     } else if (afterByte == 242) {      // F2
                         byte[] FlexIP = new byte[8];
@@ -1188,7 +1190,7 @@ public class BasicInterpreter extends AbstractBasicHandlerBehavior
                     }
                 }
                 // 获取dstHost
-                buffer.position(52);
+                buffer.position(100-dstLength/8);
                 if (dstFormat == format_restrained) {
                     dstHost = vmx * 100 + (buffer.get() & 0xff);
                 } else if (dstFormat == format_extendable) {
@@ -1208,8 +1210,8 @@ public class BasicInterpreter extends AbstractBasicHandlerBehavior
                                      ((FlexIP[1] & 0xff) << 16) + 
                                      ((FlexIP[2] & 0xff) << 8) + 
                                      (FlexIP[3] & 0xff);
-                        int x = (flexip - 202271789) / 100000;
-                        int i = flexip - 202271789 - x * 100000 + 64;
+                        int x = (flexip - 202271720) / 100000;
+                        int i = flexip - 202271720 - x * 100000 + 64;
                         dstHost = x * 100 + i;
                     } else if (dstIndex == 242) {   // F2
                         byte[] FlexIP = new byte[8];
@@ -1256,8 +1258,8 @@ public class BasicInterpreter extends AbstractBasicHandlerBehavior
                                      ((FlexIP[1] & 0xff) << 16) + 
                                      ((FlexIP[2] & 0xff) << 8) + 
                                      (FlexIP[3] & 0xff);
-                        int x = (flexip - 202271789) / 100000;
-                        int i = flexip - 202271789 - x * 100000 + 64;
+                        int x = (flexip - 202271720) / 100000;
+                        int i = flexip - 202271720 - x * 100000 + 64;
                         dstHost = x * 100 + i;
                     } else if (afterByte == 242) {
                         byte[] FlexIP = new byte[8];
