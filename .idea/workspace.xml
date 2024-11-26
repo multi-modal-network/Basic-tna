@@ -6,38 +6,6 @@
   <component name="ChangeListManager">
     <list default="true" id="f088399d-ad91-4f7a-9fa1-4d7d343c44c1" name="更改" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/netcfg_gen.py" beforeDir="false" afterPath="$PROJECT_DIR$/netcfg_gen.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratumproject/basic/tna/behaviour/BasicInterpreter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/stratumproject/basic/tna/behaviour/BasicInterpreter.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/basic-tna-1.0.1-SNAPSHOT-tests.jar" beforeDir="false" afterPath="$PROJECT_DIR$/target/basic-tna-1.0.1-SNAPSHOT-tests.jar" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/basic-tna-1.0.1-SNAPSHOT.jar" beforeDir="false" afterPath="$PROJECT_DIR$/target/basic-tna-1.0.1-SNAPSHOT.jar" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/basic-tna-1.0.1-SNAPSHOT.oar" beforeDir="false" afterPath="$PROJECT_DIR$/target/basic-tna-1.0.1-SNAPSHOT.oar" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/META-INF/MANIFEST.MF" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/stratumproject/basic/tna/Constants.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/stratumproject/basic/tna/PipeconfLoader.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/stratumproject/basic/tna/behaviour/AbstractBasicHandlerBehavior.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/stratumproject/basic/tna/behaviour/BasicCapabilities.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/stratumproject/basic/tna/behaviour/BasicInterpreter.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/stratumproject/basic/tna/behaviour/BasicTreatmentInterpreter.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/stratumproject/basic/tna/behaviour/BasicTreatmentInterpreter1.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/stratumproject/basic/tna/behaviour/BasicTreatmentInterpreter2.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/stratumproject/basic/tna/behaviour/BasicTreatmentInterpreter3.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/stratumproject/basic/tna/behaviour/BasicTreatmentInterpreter4.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/stratumproject/basic/tna/behaviour/BasicTreatmentInterpreter5.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/stratumproject/basic/tna/behaviour/BasicTreatmentInterpreter6.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/stratumproject/basic/tna/behaviour/BasicUtils.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/stratumproject/basic/tna/behaviour/P4InfoConstants.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/stratumproject/basic/tna/behaviour/pipeliner/AbstractObjectiveTranslator.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/stratumproject/basic/tna/behaviour/pipeliner/BasicPipeliner$1.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/stratumproject/basic/tna/behaviour/pipeliner/BasicPipeliner.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/stratumproject/basic/tna/behaviour/pipeliner/BasicPipelinerException.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/stratumproject/basic/tna/behaviour/pipeliner/Commons.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/stratumproject/basic/tna/behaviour/pipeliner/ForwardingObjectiveTranslator$1.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/stratumproject/basic/tna/behaviour/pipeliner/ForwardingObjectiveTranslator.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/stratumproject/basic/tna/behaviour/pipeliner/ObjectiveTranslation$Builder.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/stratumproject/basic/tna/behaviour/pipeliner/ObjectiveTranslation.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/oar/m2/org/stratumproject/basic-tna/1.0.1-SNAPSHOT/basic-tna-1.0.1-SNAPSHOT.jar" beforeDir="false" afterPath="$PROJECT_DIR$/target/oar/m2/org/stratumproject/basic-tna/1.0.1-SNAPSHOT/basic-tna-1.0.1-SNAPSHOT.jar" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tofino-netcfg.json" beforeDir="false" afterPath="$PROJECT_DIR$/tofino-netcfg.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tofino-netcfg.json.bak" beforeDir="false" afterPath="$PROJECT_DIR$/tofino-netcfg.json.bak" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -146,7 +114,7 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1732377093859</updated>
-      <workItem from="1732377095868" duration="17481000" />
+      <workItem from="1732377095868" duration="18344000" />
     </task>
     <servers />
   </component>
